@@ -1,0 +1,11 @@
+{
+  "verbose": false,
+  "ignore": [
+    "system_main_session/*",
+    "system_main_session/**/*",
+    "*.json",
+    "baileys_store*",
+    "store.json"
+  ],
+  "ext": "js,ts,html"
+}
