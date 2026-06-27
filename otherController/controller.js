@@ -76,17 +76,23 @@ const Company_Registration = async (req, res) => {
         await conn.rollback()
         return res.status(400).json({success:false,message:"National id must be unique"})
       }  
-   
+   const [phone]=await conn.execute('SELECT company_id FROM  company WHERE phone=?',
+      [adminPhone])
+       if(phone.length===1){
+        await conn.rollback()
+        return res.status(400).json({success:false,message:"Phone number  must be unique"})
+      }  
     
 
     const [result] = await conn.execute(
       `INSERT INTO company(company_id, agent_id, 
-      company_name,admin_name, admin_id, location) VALUES (?,?,?,?,?,?)`,
+      company_name,admin_name,phone, admin_id, location) VALUES (?,?,?,?,?,?,?)`,
       [
         compid,
         permissionId,
         companyNames,
         adminNames,
+        adminPhone,
         adminNid,
         companyLocation,
       ]
@@ -94,10 +100,17 @@ const Company_Registration = async (req, res) => {
 
 
     if (result.affectedRows === 1) {
+          
+      const [verifyuserphone]= await conn.execute('SELECT* FROM users WHERE phone=?',[adminPhone])
+      if(verifyuserphone.length==1){
+        await conn.rollback();
+        return res.status(400).json({success:false,message:"Phone number  must be unique"})
 
-      const [user]=await conn.execute(`INSERT INTO users(user_id, names, email,phone,
-         role, password, is_password_set) VALUES (?,?,?,?,?,?,'0')`,[
-          userid,adminNames,adminEmail,adminPhone,'subadmin',null
+      }
+
+      const [user]=await conn.execute(`INSERT INTO users(user_id,company_id,names, email,phone,
+         role, password, is_password_set) VALUES (?,?,?,?,?,?,?,'0')`,[
+          userid,compid,adminNames,adminEmail,adminPhone,'subadmin',null
          ] )    
          const insertId= user.insertId;
 
@@ -162,6 +175,12 @@ const Login = async (req,res)=>{
  }
 
  const user= result[0]
+
+  if(user.password==null||undefined){
+    await conn.rollback()
+    return res.status(400).json('Password required')
+ }
+ 
 const isvalid= await bcrypt.compare(password,user.password)
 if(isvalid){
    const token= jwt.sign({id:user.user_id,role:user.role,phone:user.phone},process.env.JWT_SEC ,{expiresIn:'1d'})
@@ -196,6 +215,7 @@ else{
 
 const PasswordSetting=async(req,res)=>{
   const {password,confirmpassword,tkn}=req.body;
+  console.log(tkn)
   
   let conn;
   try{
@@ -219,21 +239,23 @@ if(vlink.length===0){
   return res.status(401).json('Link had been expired')
  }
 const userid= vlink[0].userid
-
+console.log(vlink[0].Token,hashedtoken)
 
  const [savepws]= await conn.execute(`UPDATE users SET password=?,
    is_password_set='1' WHERE user_id=?`,[hashedpassword,userid])
    
    if(savepws.affectedRows===1){
-    await conn.execute('UPDATE linktoken SET isused="1"');
+    await conn.execute('UPDATE linktoken SET isused="1" WHERE Token=?',[hashedtoken]);
+   await conn.commit();
+
     return res.status(200).json({success:true,message:"Password successfully saved"})
    
    }
     else{
+      await conn.rollback()
        return res.status(400).json({success:false,message:"Failed try again!"})
     }
   
-   await conn.commit();
 
   }
   catch(err){

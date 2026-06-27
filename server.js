@@ -62,14 +62,12 @@ const {id,role}= socket.user;
 activeuser.add(id)
 console.log(activeuser.size)
   if(role==='superadmin'){
-    console.log(role)
   socket.join('super_admin_room');
    const currentstatus=getWhatsappStatus();
   socket.emit('whatsapp_gateway_status',currentstatus)
 
   }
   if(role==='subadmin'){
-    console.log(role) 
     socket.join('subadmin_room')
     socket.join(`admin_${id}`)
   }
@@ -79,12 +77,13 @@ console.log(activeuser.size)
     socket.join(`cashier_room_${id}`)
   }
   
-  console.log('rooms',...socket.rooms)
  
 
 
-  socket.on("disconnect", (socket) => {
-    console.log("disconnected");
+  socket.on("disconnect", () => {
+    activeuser.delete(id)
+    console.log(activeuser.size)
+
   });
 });
 
