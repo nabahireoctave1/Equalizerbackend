@@ -7,9 +7,12 @@ const http= require('http')
  const Routes= require('./routes/routes')
  const helmet= require('helmet')
  const jwt=require('jsonwebtoken')
+ const morgan=require('morgan');
 
 
  const {StartWhattApp,getWhatsappStatus}= require('./otherController/WhattappController');
+ let {getonlineuser,sendManualyNotification,HandlesendTo}= require('./MainController/Controllers')
+
 const app = express()
 
 app.use(helmet())
@@ -17,10 +20,8 @@ app.use(helmet())
 app.use(cors({
   origin:"http://localhost:5173"
 }
-
-
 ))
-
+app.use(morgan('dev'))
 app.use(express.json())
 app.use('/',Routes)
 
@@ -37,30 +38,34 @@ const io= new Server(server,{
 
 StartWhattApp(io)
 
-io.use((socket,next)=>{
-  try{
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.query.token;
 
-  const token=socket.handshake.query.token;
-  if(!token){
-    throw new Error('unuathorized')
-  }
+    if (!token) {
+      return next(new Error("Unauthorized"));
+    }
 
-  const user= jwt.verify(token,process.env.JWT_SEC)
-  socket.user=user;
-   next();
+    const user = jwt.verify(token, process.env.JWT_SEC);
+    socket.user = user;
+
+    next();
+  } catch (err) {
+    return next(new Error("Unauthorized"));
   }
-  catch(err){
-    console.log('ivalid token')
-  }
-})
+});
 const activeuser=new Set();
+
 
 io.on("connection", (socket) => {
 
-const {id,role}= socket.user;
+const {id,role,compId}= socket.user;
+HandlesendTo(socket);
 
-activeuser.add(id)
-console.log(activeuser.size)
+sendManualyNotification(io,socket);
+activeuser.add(id);
+console.log(activeuser.size,'online')
+getonlineuser(activeuser.size);
   if(role==='superadmin'){
   socket.join('super_admin_room');
    const currentstatus=getWhatsappStatus();
@@ -68,21 +73,23 @@ console.log(activeuser.size)
 
   }
   if(role==='subadmin'){
-    socket.join('subadmin_room')
-    socket.join(`admin_${id}`)
+    socket.join(`admin_${compId}`)
+    socket.join(`private_admin_${id}`)
   }
 
   if(role==='cashier')
   {
-    socket.join(`cashier_room_${id}`)
+    socket.join(`cashier_${id}`)
   }
   
+
  
 
 
   socket.on("disconnect", () => {
-    activeuser.delete(id)
-    console.log(activeuser.size)
+    activeuser.delete(id);
+    getonlineuser(activeuser.size)
+    console.log(activeuser.size,'online')
 
   });
 });
@@ -90,4 +97,5 @@ console.log(activeuser.size)
 server.listen(3000, () => {
   console.log("Server running on port 3000");
 });
+
 

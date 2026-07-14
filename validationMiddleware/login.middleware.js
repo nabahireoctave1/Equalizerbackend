@@ -8,7 +8,7 @@ const LoginValidators= [
     .withMessage("Phone number must be number only!")
     .isLength({min:10,max:10}).withMessage('Phone number must contain 10 digits!'),
     body('password').trim().notEmpty()
-    .withMessage('Password field must not be empty!')
+    .withMessage('Password required!')
     .bail().isLength({min:6,max:8}).withMessage('Password must contain bettween 6 or 8 characters'),
     (req,res,next)=>{
         const errors= validationResult(req)

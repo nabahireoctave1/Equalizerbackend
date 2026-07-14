@@ -11,7 +11,7 @@ const jwt= require('jsonwebtoken')
 
 async function generateId(conn) {
   while (true) {
-    const id = Math.floor(100000 + Math.random() * 900000);
+    const id = crypto.randomInt(100000,1000000);
      
     const [rows] = await conn.execute(
       'SELECT company_id FROM company WHERE company_id = ?',
@@ -59,36 +59,37 @@ const Company_Registration = async (req, res) => {
     const [isexist]=await conn.execute('SELECT company_id FROM  company WHERE company_name=?',
       [companyNames])
 
-      if(isexist.length===1){
+      if(isexist.length==1){
         await conn.rollback()
         return res.status(400).json({success:false,message:"Company already exist"})
       }  
       
        const [isadminexist]=await conn.execute('SELECT company_id FROM  company WHERE admin_name=?',[adminNames] )
       
-    if(isadminexist.length){
+    if(isadminexist.length==1){
       await conn.rollback()
       return res.status(400).json({success:false,message:"admin already registered to other company"})
     }
        const [adminid]=await conn.execute('SELECT company_id FROM  company WHERE admin_id=?',
       [adminNid])
-       if(adminid.length===1){
+       if(adminid.length==1){
         await conn.rollback()
         return res.status(400).json({success:false,message:"National id must be unique"})
       }  
    const [phone]=await conn.execute('SELECT company_id FROM  company WHERE phone=?',
       [adminPhone])
-       if(phone.length===1){
+       if(phone.length==1){
         await conn.rollback()
         return res.status(400).json({success:false,message:"Phone number  must be unique"})
       }  
     
 
     const [result] = await conn.execute(
-      `INSERT INTO company(company_id, agent_id, 
-      company_name,admin_name,phone, admin_id, location) VALUES (?,?,?,?,?,?,?)`,
+      `INSERT INTO company(company_id,admin_sys_Id, agent_id, 
+      company_name,admin_name,phone, admin_id, location) VALUES (?,?,?,?,?,?,?,?)`,
       [
         compid,
+        userid,
         permissionId,
         companyNames,
         adminNames,
@@ -178,12 +179,12 @@ const Login = async (req,res)=>{
 
   if(user.password==null||undefined){
     await conn.rollback()
-    return res.status(400).json('Password required')
+    return res.status(400).json({message:'Password configuration required !'})
  }
- 
+
 const isvalid= await bcrypt.compare(password,user.password)
 if(isvalid){
-   const token= jwt.sign({id:user.user_id,role:user.role,phone:user.phone},process.env.JWT_SEC ,{expiresIn:'1d'})
+   const token= jwt.sign({id:user.user_id,compId:user.company_id,role:user.role,phone:user.phone},process.env.JWT_SEC ,{expiresIn:'1d'})
   
    if(token){
    return res.status(201).json({success:true,message:"Authentication success",tkn:token})
@@ -205,9 +206,12 @@ else{
 
   }
   catch(err){
-    if(conn) await conn.release()
+    if(conn)await conn.rollback();
       console.log('error in login controller',err.message)
     return res.status(500).json({success:false,message:'Login failed try again'})
+
+  }finally{
+    if(conn) await conn.release()
 
   }
 }
@@ -267,7 +271,18 @@ console.log(vlink[0].Token,hashedtoken)
 }
 
 
+
+
+
+const emitMessageTouserinGroup=async (io,room,event,message)=>{
+  const sockets= await io.in(room).fetchSockets();
+  for( let socket of sockets){
+    socket.emit(event,{message:message});
+  }
+}
+
 module.exports ={
     Company_Registration,
     Login,PasswordSetting,
+   emitMessageTouserinGroup
 }
