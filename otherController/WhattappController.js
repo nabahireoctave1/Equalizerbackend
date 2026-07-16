@@ -58,7 +58,6 @@ async function StartWhattApp(io) {
                 StartWhattApp(globalIo);
                 
             } else {
-                fs.rm(sessionPath,{recursive:true})
                 latestQR = null;
                 globalIo.to('super_admin_room').emit('whatsapp_gateway_status', { status: "scan_required", qr: null });
                 StartWhattApp(globalIo);

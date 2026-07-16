@@ -2,7 +2,8 @@ require('dotenv').config();
 const con = require('../mysql_connection/conn');
  let {emitMessageTouserinGroup}=require('../otherController/controller')
  const crypto= require('crypto')
-const {decodeResponse}=require('../HtmlCHars')
+const {decodeResponse}=require('../HtmlCHars');
+const { off } = require('cluster');
 
 
 
@@ -376,8 +377,9 @@ const CompanyCurrentSetting= async (req,res)=>{
         return res.status(403).json({success:false,message:'Unknown company'})
     }
       try{
-      const [result]=await con.execute(`SELECT s.disable_loan_app, s.report_generetion_time, s.interest_percentage, s.payment_frequency, s.grace_period ,cp_auto_notif.reminder,cp_auto_notif.overdue FROM setting as s LEFT JOIN company_auto_notification as
-         cp_auto_notif ON s.company_id=cp_auto_notif.company_id WHERE s.company_id=?`,[compId])
+      const [result]=await con.execute(`SELECT s.*,n.reminder,n.overdue,o.startup_amount,
+      o.end_amount, o.interest_percentage as office_interest FROM setting s LEFT JOIN company_auto_notification n ON
+       s.company_id = n.company_id LEFT JOIN office_charge o ON s.company_id = o.company_id WHERE s.company_id = ?`,[compId])
 
          if(result.length!==0){
             return res.status(200).json(result);
@@ -389,6 +391,7 @@ const CompanyCurrentSetting= async (req,res)=>{
       }
 
       catch(err){
+        console.log(err)
       return res.status(500).json({title:'Server Error',message:'Failed return settings'});
       }
 
@@ -397,6 +400,7 @@ const CompanyCurrentSetting= async (req,res)=>{
 
 const HandleSaveCompanySettings= async(req,res)=>{
     const {compId}=req.user;
+    const payload= req.body;
     if(!compId||!req.user){
         return res.status(400).json({ success:false,title:"Invalid company",message:"Unkown company"})
     }
@@ -411,23 +415,136 @@ const HandleSaveCompanySettings= async(req,res)=>{
        EXISTS( SELECT 1 FROM company_auto_notification WHERE company_id = ?) AS notification_exists,
        EXISTS(SELECT 1 FROM office_charge WHERE company_id = ?) AS office_charge_exists`,[compId,compId,compId])
       const result=verifyissettingexist[0]
-    //    if(result.setting_exists==0&& result.notification_exists==0&&result.office_charge_exists){
-    //     console.log(result.setting_exists)
-    //    };
+       if(result.setting_exists===0){
+         await conn.execute(`INSERT INTO setting(company_id,report_generetion_time,
+            interest_percentage, payment_frequency,grace_period,isofficechargeenabled) VALUES (?,?,?,?,?,?)`,[
+              compId,  
+             payload.setting.    report_generetion_time,
+             payload.setting.interest_percentage,
+             payload.setting.payment_frequency,
+             payload.setting.grace_period,
+             payload.setting.isenabled
+            ])
+         
+       }
+       else{
+        await conn.execute(`UPDATE setting SET report_generetion_time=?,interest_percentage=?,
+            payment_frequency=?,grace_period=? WHERE company_id=?`,[payload.setting.report_generetion_time,
+            payload.setting.interest_percentage,payload.setting.payment_frequency,payload.setting.grace_period,
+            compId
+            ])
 
-      
-   await conn.commit();
+       }
 
+       if(result.notification_exists===0){
+         await conn.execute(`INSERT INTO company_auto_notification
+            (company_id, Reminder, overdue) VALUES (?,?,?)`,[
+               compId,
+               payload.setting.reminder,
+               payload.setting.overdue
+             ])
+       }
+       else{
+        await conn.execute(`UPDATE company_auto_notification SET 
+            Reminder=?,overdue=?,updated_at=NOW() WHERE company_id=?`,[
+               payload.setting.reminder,
+               payload.setting.overdue,
+                compId
+                
+            ])
+       }
+
+       if(result.office_charge_exists===0){
+        if (payload.officecharge.length !== 0) {
+            payload.officecharge.map( async(data)=>{
+           await conn.execute(`INSERT INTO office_charge(company_id,branch_id,interest_percentage,
+            startup_amount,end_amount) VALUES (?,?,?,?,?)`,[
+              compId,
+             payload.setting.officeId,
+             data.office_interest,
+             data.start_up,
+             data.ending,
+             ])
+            
+            })
+    }
+       }
+
+       else{
+        if(payload.officecharge.length!==0){
+         const [del]=await conn.execute('DELETE FROM office_charge WHERE company_id=?',[compId]);
+         if(del.affectedRows>0){
+          payload.officecharge.map(async(data)=>{
+              await conn.execute(`INSERT INTO office_charge(company_id,branch_id,interest_percentage,
+            startup_amount,end_amount) VALUES (?,?,?,?,?)`,[
+              compId,
+             payload.setting.officeId,
+             data.office_interest,
+             data.start_up,
+             data.ending,
+             ])
+          })
+         }
+        }
+
+       }
+       await conn.commit();
+       return res.status(200).json({success:true,title:'saved',message:'successfully setting saved'})
 
      }
      catch(err){
       if(conn) {await conn.rollback();}
+      console.log('error in Handlesave setting controller',err.message)
        return res.status(500).json({success:false, title:'Server Error',message:"Failed to save settings"})
      }finally{
         if(conn) await conn.release();
      }
 }
 
+
+const updateofficecharge=async(req,res)=>{
+    const  isenabled=req.body.isofficechargeopen;
+    let conn;
+     try{
+      conn= await con.getConnection()
+     await conn.beginTransaction();
+
+       await conn.execute('UPDATE setting SET isofficechargeenabled=?',[isenabled]);
+
+       await conn.commit();
+        return res.status(200).json({
+    success: true,
+    message: isenabled
+        ? 'Office charge is enabled'
+        : 'Office charge is disabled '
+});
+     }
+     catch(err){
+        if(conn) {await conn.rollback();}
+        return res.status(500).json({message:'Server Error'})
+     }
+}
+
+
+const ReturnCompanyBranch=async(req,res)=>{
+    const {compId}=req.user;
+    if(!compId||!req.user){
+        return res.status(200).json({success:false,message:"unnkown company"});
+    }
+
+    try{  
+     const [result]=await con.execute('SELECT branch_id, branch_name FROM branch WHERE company_id=?',[compId]);
+
+     if(result.length!==0){
+        return res.status(200).json(result);
+     }
+     return res.status(404).json({message:"No office found please  make sure you have office"});
+
+
+    }catch(err){
+
+    }
+}
 
 
 module.exports = {
@@ -445,5 +562,7 @@ module.exports = {
    HandlesaveAgent,
    LogAgent,
    CompanyCurrentSetting,
-   HandleSaveCompanySettings
+   HandleSaveCompanySettings,
+   updateofficecharge,
+   ReturnCompanyBranch
 };

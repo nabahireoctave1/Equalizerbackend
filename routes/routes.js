@@ -11,7 +11,8 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  HandleReturnAdminList,
  HandlesaveAgent,
  LogAgent,CompanyCurrentSetting,
- HandleSaveCompanySettings
+ HandleSaveCompanySettings,updateofficecharge,
+ ReturnCompanyBranch
  } = require('../MainController/Controllers')
 const { VerifyToken,VerifyRole } = require('../validationMiddleware/VerifyToken_Role')
 const validator = require('../validationMiddleware/settingInputValidator')
@@ -32,6 +33,8 @@ router.post('/add-agent-data',VerifyToken,VerifyRole('superadmin'),ValidateAgent
 router.get('/agent-info',VerifyToken,VerifyRole('superadmin'),LogAgent);
 router.get('/company-current-setting',VerifyToken,VerifyRole('subadmin'),CompanyCurrentSetting)
 router.post('/save-company-settings',VerifyToken,VerifyRole('subadmin'),validateInput,HandleSaveCompanySettings)
+router.put('/disable-office-charge',VerifyToken,VerifyRole('subadmin'),updateofficecharge)
+router.get('/current-branch',VerifyToken,VerifyRole('subadmin'),ReturnCompanyBranch)
 
 
 
