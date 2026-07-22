@@ -49,16 +49,14 @@ const companyValidation = [
 
   body("adminEmail")
     .trim()
-    .notEmpty()
-    .withMessage("Email required!")
+    .optional({nullable:true})
     .bail()
     .isEmail()
     .withMessage("Invalid email format!"),
 
   body("permissionId")
-    .notEmpty()
-    .withMessage("Permission required!")
-    .bail()
+    .optional({nullable:true})  
+      .bail()
     .isNumeric()
     .withMessage("Permission must be number!"),
 

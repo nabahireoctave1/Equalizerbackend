@@ -7,7 +7,13 @@ const {SendWhattappmessage}=require('./WhattappController')
 
 const bcrypt= require('bcrypt')
 const jwt= require('jsonwebtoken')
- 
+const axios=require('axios')
+
+
+
+
+   
+
 
 async function generateId(conn) {
   while (true) {
@@ -281,8 +287,29 @@ const emitMessageTouserinGroup=async (io,room,event,message)=>{
   }
 }
 
+
+
+const BillingInfo= async(req,res)=>{
+    const {compId}=req.user;
+  try{
+    const [result]= await con.execute(`SELECT expire_at FROM billing WHERE company_id=?`,[compId])
+      if(result.length===0){
+        return res.status(401).json({message:"Please  company account activation required !"})
+      }
+
+      return res.status(200).json(result)
+
+  }
+  catch(err){
+    return res.status(500).json({message:"Unable to find company billing try again"})
+  }
+}
+
+
 module.exports ={
     Company_Registration,
     Login,PasswordSetting,
-   emitMessageTouserinGroup
+   emitMessageTouserinGroup,
+   BillingInfo
+
 }

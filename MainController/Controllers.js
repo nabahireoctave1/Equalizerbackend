@@ -28,6 +28,26 @@ async function generateId(conn) {
   }
 }
 
+const generateCashierUniqueId=async(conn)=>{
+ while(true){
+    const randomId=crypto.randomInt(1000000,9999999);
+    const [rows]= await conn.execute('SELECT cashier_id FROM cashier WHERE cashier_id=?',[randomId])
+    if(rows.length===0){
+    return randomId;
+  }
+ }
+}
+
+const generateBranchId= async(conn)=>{
+    while(true){
+        const branchId=crypto.randomInt(1000000,9999999);
+        const [rows]=await conn.execute('SELECT branch_id FROM cashier WHERE branch_id=?',[branchId])
+        if(rows.length===0){
+            return branchId
+        }
+    }
+}
+
 const OverviewDash = async (req, res) => {
     try {
         
@@ -378,8 +398,10 @@ const CompanyCurrentSetting= async (req,res)=>{
     }
       try{
       const [result]=await con.execute(`SELECT s.*,n.reminder,n.overdue,o.startup_amount,
-      o.end_amount, o.interest_percentage as office_interest FROM setting s LEFT JOIN company_auto_notification n ON
-       s.company_id = n.company_id LEFT JOIN office_charge o ON s.company_id = o.company_id WHERE s.company_id = ?`,[compId])
+      o.end_amount, o.interest_percentage as office_interest FROM setting
+       s LEFT JOIN company_auto_notification n ON
+       s.company_id = n.company_id LEFT JOIN office_charge o ON 
+       s.company_id = o.company_id WHERE s.company_id = ?`,[compId])
 
          if(result.length!==0){
             return res.status(200).json(result);
@@ -401,6 +423,7 @@ const CompanyCurrentSetting= async (req,res)=>{
 const HandleSaveCompanySettings= async(req,res)=>{
     const {compId}=req.user;
     const payload= req.body;
+    
     if(!compId||!req.user){
         return res.status(400).json({ success:false,title:"Invalid company",message:"Unkown company"})
     }
@@ -409,21 +432,22 @@ const HandleSaveCompanySettings= async(req,res)=>{
       
        conn = await con.getConnection();
        await conn.beginTransaction();
+
+      
       
        const [verifyissettingexist]= await conn.execute(`SELECT
        EXISTS(SELECT 1 FROM setting WHERE company_id = ?) AS setting_exists,
        EXISTS( SELECT 1 FROM company_auto_notification WHERE company_id = ?) AS notification_exists,
-       EXISTS(SELECT 1 FROM office_charge WHERE company_id = ?) AS office_charge_exists`,[compId,compId,compId])
+       EXISTS(SELECT 1 FROM office_charge WHERE branch_id = ?) AS office_charge_exists`,[compId,compId,payload.setting.officeId])
       const result=verifyissettingexist[0]
        if(result.setting_exists===0){
          await conn.execute(`INSERT INTO setting(company_id,report_generetion_time,
-            interest_percentage, payment_frequency,grace_period,isofficechargeenabled) VALUES (?,?,?,?,?,?)`,[
+            interest_percentage, payment_frequency,grace_period) VALUES (?,?,?,?,?)`,[
               compId,  
-             payload.setting.    report_generetion_time,
+             payload.setting.report_generetion_time,
              payload.setting.interest_percentage,
              payload.setting.payment_frequency,
              payload.setting.grace_period,
-             payload.setting.isenabled
             ])
          
        }
@@ -457,6 +481,7 @@ const HandleSaveCompanySettings= async(req,res)=>{
        if(result.office_charge_exists===0){
         if (payload.officecharge.length !== 0) {
             payload.officecharge.map( async(data)=>{
+             
            await conn.execute(`INSERT INTO office_charge(company_id,branch_id,interest_percentage,
             startup_amount,end_amount) VALUES (?,?,?,?,?)`,[
               compId,
@@ -472,7 +497,7 @@ const HandleSaveCompanySettings= async(req,res)=>{
 
        else{
         if(payload.officecharge.length!==0){
-         const [del]=await conn.execute('DELETE FROM office_charge WHERE company_id=?',[compId]);
+         const [del]=await conn.execute('DELETE FROM office_charge WHERE branch_id=?',[payload.setting.officeId]);
          if(del.affectedRows>0){
           payload.officecharge.map(async(data)=>{
               await conn.execute(`INSERT INTO office_charge(company_id,branch_id,interest_percentage,
@@ -489,13 +514,13 @@ const HandleSaveCompanySettings= async(req,res)=>{
 
        }
        await conn.commit();
-       return res.status(200).json({success:true,title:'saved',message:'successfully setting saved'})
+       return res.status(200).json({success:true,message:'successfully  saved'})
 
      }
      catch(err){
       if(conn) {await conn.rollback();}
       console.log('error in Handlesave setting controller',err.message)
-       return res.status(500).json({success:false, title:'Server Error',message:"Failed to save settings"})
+       return res.status(500).json({success:false,message:"Failed to save settings"})
      }finally{
         if(conn) await conn.release();
      }
@@ -504,12 +529,13 @@ const HandleSaveCompanySettings= async(req,res)=>{
 
 const updateofficecharge=async(req,res)=>{
     const  isenabled=req.body.isofficechargeopen;
+    const {compId}=req.user;
     let conn;
      try{
       conn= await con.getConnection()
      await conn.beginTransaction();
 
-       await conn.execute('UPDATE setting SET isofficechargeenabled=?',[isenabled]);
+       await conn.execute('UPDATE setting SET isofficechargeenabled=? WHERE company_id=?',[isenabled,compId]);
 
        await conn.commit();
         return res.status(200).json({
@@ -542,9 +568,77 @@ const ReturnCompanyBranch=async(req,res)=>{
 
 
     }catch(err){
-
+    console.log('Error in Return Branch controller',err.message);
     }
 }
+
+
+const AddCashier= async(req,res)=>{
+    const {compId}=req.user;
+    const payload=req.body;
+    console.log(payload)
+    let conn;
+
+  try{
+   
+    conn=await con.getConnection();
+    await conn.beginTransaction();
+    const cashierId=await generateCashierUniqueId(conn);
+    await conn.execute(`INSERT INTO cashier(cashier_id,branch_id,company_id,cashier_name, 
+        cashier_contact,cashier_email,cashier_location) VALUES (?,?,?,?,?,?,?)`,[
+         cashierId,payload.branch,compId,payload.names,payload.phoneno,payload.email,payload.location
+        ])
+
+    await conn.commit();
+    return res.status(200).json({success:true,message:"Cashier have been added"})
+
+
+  }
+  catch(err){
+    if(conn){await conn.rollback()}
+    console.log(err.message)
+    return res.status(500).json({success:false,message:"Failed to save cashiers"})
+  }finally{
+    if(conn) await conn.release();
+  }
+}
+
+
+const FetchCashier= async(req,res)=>{
+    const {compId}=req.user;
+     try{
+       const [result]= await con.execute(`
+   SELECT
+    c.cashier_name,
+    c.cashier_contact,
+    c.cashier_email,
+    c.cashier_location,
+    c.status,
+    b.branch_name
+FROM cashier c
+INNER JOIN branch b
+    ON c.branch_id = b.branch_id
+           WHERE c.company_id = ?`,[compId])
+       if(result.length!==0){
+        return res.status(200).json(result);
+       }
+       return res.status(404).json({size:0,message:"Cashier not found"})
+     }catch(err){
+        console.log(err.message)
+      return res.status(500).json({size:1,message:`Unexpected server error occured while loading cashiers. Plaese try again!`})
+     }
+}
+
+ const FetchRepaymentInfo= async(req,res)=>{
+    try{
+      
+        const [result]=await con.execute('')
+
+    }
+    catch(err){
+
+    }
+ }
 
 
 module.exports = {
@@ -564,5 +658,7 @@ module.exports = {
    CompanyCurrentSetting,
    HandleSaveCompanySettings,
    updateofficecharge,
-   ReturnCompanyBranch
+   ReturnCompanyBranch,
+   AddCashier,
+   FetchCashier
 };
