@@ -514,7 +514,7 @@ const HandleSaveCompanySettings= async(req,res)=>{
 
        }
        await conn.commit();
-       return res.status(200).json({success:true,message:'successfully  saved'})
+       return res.status(200).json({success:true,message:'successfully setting saved'})
 
      }
      catch(err){
@@ -596,7 +596,6 @@ const AddCashier= async(req,res)=>{
   }
   catch(err){
     if(conn){await conn.rollback()}
-    console.log(err.message)
     return res.status(500).json({success:false,message:"Failed to save cashiers"})
   }finally{
     if(conn) await conn.release();
@@ -625,22 +624,165 @@ INNER JOIN branch b
        return res.status(404).json({size:0,message:"Cashier not found"})
      }catch(err){
         console.log(err.message)
-      return res.status(500).json({size:1,message:`Unexpected server error occured while loading cashiers. Plaese try again!`})
+      return res.status(500).json({size:1,message:`Unexpected server error occured. Please try again `})
      }
 }
 
  const FetchRepaymentInfo= async(req,res)=>{
+    if(!req.user||!req.user.compId) return;
+    const {compId}=req.user;
     try{
       
-        const [result]=await con.execute('')
+        const [result]=await con.execute(`SELECT  
+            l.loan_id , 
+            r.client_name, 
+            r.client_amount, r.date, r.status, 
+            r.signed_by
+             FROM repayment r 
+             INNER JOIN loan l ON 
+             r.loan_id=l.loan_id 
+              WHERE r.company_id= ?`,[compId]);
+              if(result.length!==0){
+              return res.status(200).json(result)
+
+              }
+              return res.status(404).json({size:0,message:"There no  repayment records found !"})
+    }
+    catch(err){
+      console.log('Error in fetch repayment information controller',err.message)
+      return res.status(500).json({size:1,message:"Un expected server error occured  "})
+    }
+ }
+
+
+ const FetchCUrrentLoans= async (req,res)=>{
+    if(!req.user||!req.user.compId){
+        return 
+    }
+    const {compId}=req.user;
+    try{  
+       const branchsMap ={};
+        const [result]=await con.execute(`
+    SELECT b.branch_name,b.branch_id, l.client_id,l.recieved_amount,l.totalpay,l.fees,
+     l.national_id,l.guarantor_name, l.guarantor_address,l.guarantor_contacts,l.approved,
+      l.unpaid_days, l.closing_date,l.client_name,l.amount_given,l.status,l.pay_frequency,
+      l.security FROM branch b LEFT JOIN loan l ON b.branch_id=l.branch_id
+        WHERE l.company_id=?`,[compId])
+         if(result.length!==0){
+        result.forEach((row)=>{
+            const amountGiven= Number(row?.amount_given||0)
+            
+            if(!branchsMap[row.branch_id]){
+                branchsMap[row.branch_id]={
+                    branchId:row.branch_id,
+                    branchName:row.branch_name,
+                    loanscount:0,
+                    total_loaned:0,
+                    totalunpaid:0,
+
+                    loans:[]
+
+                }
+
+                if(row.status&&row.status.toLowerCase()==='unpaid'){
+                branchsMap[row.branch_id].totalunpaid+=amountGiven;
+                  }
+                if(row.client_id){
+                    branchsMap[row.branch_id].loans.push({
+                        clientId:row.client_id,
+                        client_names:row.client_name,
+                        amount_given:amountGiven,
+                        status:row.status,
+                        guarantorname:row.guarantor_name,
+                        guarantoraddress:row.guarantor_address,
+                        guarantorcontacts:row.guarantor_contacts,
+                        received_Amount:row.recieved_amount,
+                        unpaidwindow:row.unpaid_days,
+                        closingDate:row.closing_date,
+                        clientnationalID:row.national_id,
+                        totalpay:row.totalpay,
+                        fees:row.fees,
+                        payment_frequency:row.pay_frequency,
+                        security:row.security,
+                        approved_by:row.approved
+
+                        
+                    });
+
+                    branchsMap[row.branch_id].loanscount +=1;
+                    branchsMap[row.branch_id].total_loaned+=Number(row?.amount_given||0);
+                }
+            }
+
+        })
+         
+        // console.dir(branchsMap,{depth:null,color    :true})/////
+
+        return res.status(200).json(Object.values(branchsMap));
+
+        }
+
+       return res.status(404).json({size:0,message:"No branch has recorded any data yet. new loans will appear here once branches start creating records "})
+        
+
+
+    }
+    catch(err){
+    console.log('Error in Fetch current Loans controllers',err.message);
+    return res.status(500).json({size:1,message:"Un expected server error occured"})
+    }
+ }
+
+
+ const FetchAllCompanyClient= async(req,res)=>{
+    if(!req.user) { return }
+    const {compId}= req.user;
+    try{
+      
+        const [response]=await con.execute(`
+            SELECT c.national_id, c.company_id,c.branch_id,c.client_name,
+             c.location, c.phone,c.client_address,b.branch_name,l.status as loan_status FROM
+              client c INNER JOIN branch b ON c.branch_id=b.branch_id LEFT JOIN loan l 
+            ON c.client_id=l.client_id  WHERE c.company_id=? ORDER BY c.created_at ASC`,[compId])
+           
+            if(response.length!==0){
+                return res.status(200).json(response)
+            }
+
+            return res.status(404).json({size:0,message:`There are currently no borrower accounts
+                 to display , new borrowers will appear here once there are registered  `})
+
+    }
+    catch(err){
+        console.log('error in company client controller',err);
+      return res.status(500).json({size:1,message:'Unexpected server error occured'})
+    }
+ }
+
+
+
+ const SmsTransactionLog= async(req,res)=>{
+     if(!req.user||!req.user.compId) return;
+      const {compId}=req.user;  
+   
+    try{
+     console.log(compId)
+     const [response]= await con.execute(`
+        SELECT sms_id,amount, sms_purchase_total,
+         date, status FROM sms WHERE company_id=?`,[compId])
+
+         if(response.length!==0){
+            return res.status(200).json(response)
+         }
+
+         return res.status(404).json({size:1,message:"NO sms transacton found"})
+
 
     }
     catch(err){
 
     }
  }
-
-
 module.exports = {
     OverviewDash,
     getonlineuser,
@@ -660,5 +802,9 @@ module.exports = {
    updateofficecharge,
    ReturnCompanyBranch,
    AddCashier,
-   FetchCashier
+   FetchCashier,
+   FetchRepaymentInfo,
+   FetchCUrrentLoans,
+   FetchAllCompanyClient,
+   SmsTransactionLog
 };

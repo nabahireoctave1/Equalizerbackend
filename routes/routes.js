@@ -14,7 +14,11 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  LogAgent,CompanyCurrentSetting,
  HandleSaveCompanySettings,updateofficecharge,
  ReturnCompanyBranch,AddCashier,
- FetchCashier
+ FetchCashier,
+ FetchRepaymentInfo,
+ FetchCUrrentLoans,
+ FetchAllCompanyClient,
+ SmsTransactionLog
  } = require('../MainController/Controllers')
 const { VerifyToken,VerifyRole } = require('../validationMiddleware/VerifyToken_Role')
 const validator = require('../validationMiddleware/settingInputValidator')
@@ -41,6 +45,10 @@ router.post('/add-cashier',VerifyToken,VerifyRole('subadmin'),validatecashierReq
 
 router.get('/company-cashier',VerifyToken,VerifyRole('subadmin'),FetchCashier)
 router.get('/billingInfo',VerifyToken,VerifyRole('subadmin'),BillingInfo)
+router.get('/repayment',VerifyToken,VerifyRole('subadmin'),FetchRepaymentInfo)
+router.get('/current-loans',VerifyToken,VerifyRole('subadmin'),FetchCUrrentLoans)
+router.get('/clients',VerifyToken,VerifyRole('subadmin'),FetchAllCompanyClient)
+router.get('/sms-transaction-log',VerifyToken,VerifyRole('subadmin'),SmsTransactionLog)
 
 
 module.exports=router
