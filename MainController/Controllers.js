@@ -4,6 +4,7 @@ const con = require('../mysql_connection/conn');
  const crypto= require('crypto')
 const {decodeResponse}=require('../HtmlCHars');
 const { off } = require('cluster');
+const { error } = require('console');
 
 
 
@@ -397,11 +398,12 @@ const CompanyCurrentSetting= async (req,res)=>{
         return res.status(403).json({success:false,message:'Unknown company'})
     }
       try{
-      const [result]=await con.execute(`SELECT s.*,n.reminder,n.overdue,o.startup_amount,
-      o.end_amount, o.interest_percentage as office_interest FROM setting
-       s LEFT JOIN company_auto_notification n ON
-       s.company_id = n.company_id LEFT JOIN office_charge o ON 
-       s.company_id = o.company_id WHERE s.company_id = ?`,[compId])
+      const [result] = await con.execute
+      (`SELECT 
+    s.*, n.reminder,n.overdue,o.branch_id,o.startup_amount, o.end_amount,o.interest_percentage AS office_interest,b.branch_name AS office_name,
+    b.location AS office_location FROM setting s LEFT JOIN company_auto_notification n ON s.company_id = n.company_id
+    LEFT JOIN office_charge o ON s.company_id = o.company_id LEFT JOIN branch b ON o.branch_id = b.branch_id WHERE s.company_id = ?
+     ORDER BY o.branch_id ASC, o.startup_amount ASC`, [compId]);
 
          if(result.length!==0){
             return res.status(200).json(result);
@@ -764,25 +766,115 @@ INNER JOIN branch b
  const SmsTransactionLog= async(req,res)=>{
      if(!req.user||!req.user.compId) return;
       const {compId}=req.user;  
+
    
     try{
-     console.log(compId)
      const [response]= await con.execute(`
         SELECT sms_id,amount, sms_purchase_total,
-         date, status FROM sms WHERE company_id=?`,[compId])
+         date, status FROM sms_transaction_logs WHERE company_id=?`,[compId])
 
          if(response.length!==0){
             return res.status(200).json(response)
          }
 
-         return res.status(404).json({size:1,message:"NO sms transacton found"})
+         return res.status(404).json({size:0,message:"NO sms transaction found"})
 
+
+    }
+    catch(err){
+       console.log('Error in sms transaction controller',err.message);
+    }
+ }
+
+
+ const currentSMS= async(req,res)=>{
+    if(!req.user||!req.user.compId) return
+     
+    const {compId}=req.user;
+     try{
+     
+        const [response]= await con.execute(`SELECT
+    c.company_id,
+    c.messages AS remaining_sms,
+
+    (
+        SELECT 
+            COALESCE(SUM(t.sms_purchase_total),0)
+        FROM sms_transaction_logs t
+        WHERE t.company_id=c.company_id
+        AND t.package_status='active'
+    ) AS total_purchase,
+
+    (
+        SELECT 
+            COALESCE(SUM(sms_usg.sms_used),0)
+        FROM company_sms_usage sms_usg
+        WHERE sms_usg.company_id = c.company_id
+    ) AS total_used
+
+FROM company_sms_balance c
+WHERE c.company_id =?`,[compId])
+
+if(response.length!==0){
+
+    
+    return res.status(200).json({smsdata:response})
+
+}
+
+let default_response=[{remaining_sms:0,total_purchase:0,
+    total_used:0
+}];
+
+return res.status(200).json({smsdata:default_response});
+
+
+
+
+     }
+     catch(err){
+        console.log('error in currentSMS controller',err.message)
+     }
+
+
+ } 
+
+
+
+
+
+ const PurchaseSMS= async(req,res)=>{
+
+console.log(req.body);
+
+    try{
 
     }
     catch(err){
 
     }
  }
+
+
+
+
+ const ChangeCompanyInfo= async(req,res)=>{
+      if(!req.user) { return null } 
+    const {compId}=req.user;
+
+     try{
+        console.log(req.body,compId)
+       
+
+
+     }
+    catch(err){
+        console.log('Error in Changecompany info controller',err.message);
+        return res.status(500).json({message:'Unexpected server error occured try again'})
+    }
+ }
+
+
 module.exports = {
     OverviewDash,
     getonlineuser,
@@ -806,5 +898,7 @@ module.exports = {
    FetchRepaymentInfo,
    FetchCUrrentLoans,
    FetchAllCompanyClient,
-   SmsTransactionLog
+   SmsTransactionLog,
+   currentSMS,PurchaseSMS,
+   ChangeCompanyInfo
 };

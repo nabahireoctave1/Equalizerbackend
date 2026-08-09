@@ -7,6 +7,8 @@ const ValidatePassword = require('../validationMiddleware/passwordvalidation.mid
 const ValidateAgentInfo=require('../validationMiddleware/agent.middleware')
 const validateInput= require('../validationMiddleware/companySetting.middleware')
 const validatecashierRequest= require('../validationMiddleware/cashier.middleware')
+const validateSMSPackageInputs=require('../validationMiddleware/purchaseSMS.validatation.middleware')
+const ValidatechangedCompInfo= require('../validationMiddleware/changeComp.info.middleware')
 const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  ReturnCurrentSetting,GetCompanyAdmin,
  HandleReturnAdminList,
@@ -18,7 +20,10 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  FetchRepaymentInfo,
  FetchCUrrentLoans,
  FetchAllCompanyClient,
- SmsTransactionLog
+ SmsTransactionLog,
+ currentSMS,
+ PurchaseSMS,
+ ChangeCompanyInfo
  } = require('../MainController/Controllers')
 const { VerifyToken,VerifyRole } = require('../validationMiddleware/VerifyToken_Role')
 const validator = require('../validationMiddleware/settingInputValidator')
@@ -39,7 +44,7 @@ router.post('/add-agent-data',VerifyToken,VerifyRole('superadmin'),ValidateAgent
 router.get('/agent-info',VerifyToken,VerifyRole('superadmin'),LogAgent);
 router.get('/company-current-setting',VerifyToken,VerifyRole('subadmin'),CompanyCurrentSetting)
 router.post('/save-company-settings',VerifyToken,VerifyRole('subadmin'),validateInput,HandleSaveCompanySettings)
-router.put('/disable-office-charge',VerifyToken,VerifyRole('subadmin'),updateofficecharge)
+router.put('/Handle-toggle-on-off-office-setting',VerifyToken,VerifyRole('subadmin'),updateofficecharge)
 router.get('/current-branch',VerifyToken,VerifyRole('subadmin'),ReturnCompanyBranch);
 router.post('/add-cashier',VerifyToken,VerifyRole('subadmin'),validatecashierRequest,AddCashier)
 
@@ -49,6 +54,9 @@ router.get('/repayment',VerifyToken,VerifyRole('subadmin'),FetchRepaymentInfo)
 router.get('/current-loans',VerifyToken,VerifyRole('subadmin'),FetchCUrrentLoans)
 router.get('/clients',VerifyToken,VerifyRole('subadmin'),FetchAllCompanyClient)
 router.get('/sms-transaction-log',VerifyToken,VerifyRole('subadmin'),SmsTransactionLog)
+router.get('/smsinfo',VerifyToken,VerifyRole('subadmin'),currentSMS)
+router.post('/purchase-sms',VerifyToken,VerifyRole('subadmin'),validateSMSPackageInputs,PurchaseSMS)
+router.put('/change-company-info',VerifyToken,VerifyRole('subadmin'),ValidatechangedCompInfo,ChangeCompanyInfo)
 
 
 module.exports=router
