@@ -7,9 +7,8 @@ const validatecashierRequest=[
     body('email').optional({nullable:true}).customSanitizer(escapeHtmlChar),
     body('location').notEmpty().withMessage('Please location required !').customSanitizer(escapeHtmlChar),
     body('phoneno').notEmpty().withMessage('Please phone number required !').isNumeric().withMessage('phone number must be number !')
-    .isLength({min:10,max:10}).withMessage('Invalid parameters !'),
+    .isLength({min:10,max:10}).withMessage('Phone number must be number !'),
     body('branch').notEmpty().withMessage('Branch name required!').customSanitizer(escapeHtmlChar)
-    
     ,(req,res,next)=>{
   const errors=validationResult(req)
   if(!errors.isEmpty()){

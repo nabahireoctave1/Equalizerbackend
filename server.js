@@ -11,20 +11,28 @@ const http= require('http')
 
 
  const {StartWhattApp,getWhatsappStatus}= require('./otherController/WhattappController');
- let {getonlineuser,sendManualyNotification,HandlesendTo}= require('./MainController/Controllers')
+ let {getonlineuser,sendManualyNotification,HandlesendTo}= require('./MainController/Controllers');
+const path = require('path');
 
 const app = express()
 
-app.use(helmet())
 
 app.use(cors({
   origin:"http://localhost:5173"
+
 }
 ))
+app.use(helmet({
+crossOriginResourcePolicy:{
+  policy:"cross-origin"
+}
+}))
+
 app.use(morgan('dev'))
 app.use(express.json())
 app.use('/',Routes)
 
+app.use('/uploads',express.static(path.join(__dirname,'uploads')))
 
 
 const server= http.createServer(app)

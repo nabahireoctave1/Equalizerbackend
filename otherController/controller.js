@@ -178,7 +178,8 @@ const Login = async (req,res)=>{
  const name= result[0].name;
  if(status==='inactive'){
   await conn.rollback()
-  return res.status(401).json( {success:false, message:`Dear ${name}  your account have been locked please contact support for assistance`})
+  return res.status(401).json( {success:false, message:`Dear ${name}  your account have been
+     locked please contact support for assistance`})
  }
 
  const user= result[0]
@@ -190,7 +191,7 @@ const Login = async (req,res)=>{
 
 const isvalid= await bcrypt.compare(password,user.password)
 if(isvalid){
-   const token= jwt.sign({id:user.user_id,compId:user.company_id,role:user.role,phone:user.phone},process.env.JWT_SEC ,{expiresIn:'1d'})
+   const token= jwt.sign({userId:user.user_id,name:user.names,compId:user.company_id,role:user.role,phone:user.phone},process.env.JWT_SEC ,{expiresIn:'1d'})
   
    if(token){
    return res.status(201).json({success:true,message:"Authentication success",tkn:token})
@@ -294,14 +295,14 @@ const BillingInfo= async(req,res)=>{
   try{
     const [result]= await con.execute(`SELECT expire_at FROM billing WHERE company_id=?`,[compId])
       if(result.length===0){
-        return res.status(401).json({message:"Please  company account activation required !"})
+        return res.status(404).json({size:0,messagekey:"billing.subscription.subscription_expired_message"})
       }
 
       return res.status(200).json(result)
 
   }
   catch(err){
-    return res.status(500).json({message:"Unable to find company billing try again"})
+    return res.status(500).json({size:1,messagekey:"errors.server_error"})
   }
 }
 

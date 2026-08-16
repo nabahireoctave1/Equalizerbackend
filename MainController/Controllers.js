@@ -395,7 +395,7 @@ const LogAgent=async(req,res)=>{
 const CompanyCurrentSetting= async (req,res)=>{
     const {compId}=req.user;
     if(!compId){
-        return res.status(403).json({success:false,message:'Unknown company'})
+        return null;
     }
       try{
       const [result] = await con.execute
@@ -409,26 +409,25 @@ const CompanyCurrentSetting= async (req,res)=>{
             return res.status(200).json(result);
          }
          else{
-            return res.status(404).json({success:false, title:'Please configure your company settings',message:'Settings are not configured yet , configure required settings'})
+            return res.status(404).json({success:false, size:0,message:'errors.setting_required_desc'})
          }
 
       }
 
       catch(err){
-        console.log(err)
-      return res.status(500).json({title:'Server Error',message:'Failed return settings'});
+        console.log('Error in CompanyCurrentSetting controller',err.message)
+      return res.status(500).json({size:1,message:'errors.server_error'});
       }
 
 }
 
 
 const HandleSaveCompanySettings= async(req,res)=>{
+    if(!req.user) return null
     const {compId}=req.user;
     const payload= req.body;
     
-    if(!compId||!req.user){
-        return res.status(400).json({ success:false,title:"Invalid company",message:"Unkown company"})
-    }
+  
     let conn;
      try{ 
       
@@ -540,16 +539,12 @@ const updateofficecharge=async(req,res)=>{
        await conn.execute('UPDATE setting SET isofficechargeenabled=? WHERE company_id=?',[isenabled,compId]);
 
        await conn.commit();
-        return res.status(200).json({
-    success: true,
-    message: isenabled
-        ? 'Office charge is enabled'
-        : 'Office charge is disabled '
-});
      }
      catch(err){
         if(conn) {await conn.rollback();}
-        return res.status(500).json({message:'Server Error'})
+        console.log('Error in update office charge controller',err.message);
+     } finally{
+        if(conn) await conn.release();
      }
 }
 
@@ -578,7 +573,6 @@ const ReturnCompanyBranch=async(req,res)=>{
 const AddCashier= async(req,res)=>{
     const {compId}=req.user;
     const payload=req.body;
-    console.log(payload)
     let conn;
 
   try{
@@ -598,6 +592,7 @@ const AddCashier= async(req,res)=>{
   }
   catch(err){
     if(conn){await conn.rollback()}
+    console.log('Error in addcashier controller',err.message)
     return res.status(500).json({success:false,message:"Failed to save cashiers"})
   }finally{
     if(conn) await conn.release();
@@ -610,6 +605,7 @@ const FetchCashier= async(req,res)=>{
      try{
        const [result]= await con.execute(`
    SELECT
+   c.cashier_id,
     c.cashier_name,
     c.cashier_contact,
     c.cashier_email,
@@ -623,10 +619,10 @@ INNER JOIN branch b
        if(result.length!==0){
         return res.status(200).json(result);
        }
-       return res.status(404).json({size:0,message:"Cashier not found"})
+       return res.status(404).json({size:0,messagekey:"errors.cashiers_not_found"})
      }catch(err){
         console.log(err.message)
-      return res.status(500).json({size:1,message:`Unexpected server error occured. Please try again `})
+      return res.status(500).json({size:1,messagekey:`errors.server_error`})
      }
 }
 
@@ -648,11 +644,11 @@ INNER JOIN branch b
               return res.status(200).json(result)
 
               }
-              return res.status(404).json({size:0,message:"There no  repayment records found !"})
+              return res.status(404).json({size:0,messagekey:"errors.repayment_not_found"})
     }
     catch(err){
       console.log('Error in fetch repayment information controller',err.message)
-      return res.status(500).json({size:1,message:"Un expected server error occured  "})
+      return res.status(500).json({size:1,messagekey:"errors.server_error"})
     }
  }
 
@@ -720,18 +716,18 @@ INNER JOIN branch b
          
         // console.dir(branchsMap,{depth:null,color    :true})/////
 
-        return res.status(200).json(Object.values(branchsMap));
+        return res.status(200).json(decodeResponse(Object.values(branchsMap)));
 
         }
 
-       return res.status(404).json({size:0,message:"No branch has recorded any data yet. new loans will appear here once branches start creating records "})
+       return res.status(404).json({size:0,messagekey:"errors.loans_not_found"})
         
 
 
     }
     catch(err){
     console.log('Error in Fetch current Loans controllers',err.message);
-    return res.status(500).json({size:1,message:"Un expected server error occured"})
+    return res.status(500).json({size:1,messagekey:"errors.server_error"})
     }
  }
 
@@ -751,13 +747,12 @@ INNER JOIN branch b
                 return res.status(200).json(response)
             }
 
-            return res.status(404).json({size:0,message:`There are currently no borrower accounts
-                 to display , new borrowers will appear here once there are registered  `})
+            return res.status(404).json({size:0,messagekey:`errors.borrowers_not_found`})
 
     }
     catch(err){
-        console.log('error in company client controller',err);
-      return res.status(500).json({size:1,message:'Unexpected server error occured'})
+        console.log('error in company client controller',err.message);
+      return res.status(500).json({size:1,messagekey:'errors.server_error'})
     }
  }
 
@@ -777,7 +772,7 @@ INNER JOIN branch b
             return res.status(200).json(response)
          }
 
-         return res.status(404).json({size:0,message:"NO sms transaction found"})
+         return res.status(404).json({size:0,messagekey:"errors.sms_not_found"})
 
 
     }
@@ -816,20 +811,13 @@ FROM company_sms_balance c
 WHERE c.company_id =?`,[compId])
 
 if(response.length!==0){
-
-    
     return res.status(200).json({smsdata:response})
 
 }
 
-let default_response=[{remaining_sms:0,total_purchase:0,
-    total_used:0
-}];
+   let default_response=[{remaining_sms:0,total_purchase:0, total_used:0}];
 
-return res.status(200).json({smsdata:default_response});
-
-
-
+  return res.status(200).json({smsdata:default_response});
 
      }
      catch(err){
@@ -859,46 +847,367 @@ console.log(req.body);
 
 
  const ChangeCompanyInfo= async(req,res)=>{
-      if(!req.user) { return null } 
+      if(!req.user) return null 
     const {compId}=req.user;
+    
+    let conn;
 
      try{
-        console.log(req.body,compId)
-       
+       conn=await con.getConnection();
+        await conn.beginTransaction();
+        const {companyName,companyAdmin,companyLocation}=req.body;
+        const [result]=await conn.execute(`
+            UPDATE company SET company_name=?,admin_name=?,location=? WHERE company_id=?
+            `,[companyName,companyAdmin,companyLocation,compId])
+
+     await conn.commit();
+
+     if(result.affectedRows===1){
+        return res.status(200).json({success:true,messagekey:'success.cpinfo_saved' })
+     }
 
 
      }
     catch(err){
+        if(conn){await conn.rollback();} 
         console.log('Error in Changecompany info controller',err.message);
-        return res.status(500).json({message:'Unexpected server error occured try again'})
+        return res.status(500).json({messagekey:'errors.server_error'})
+    } finally{
+        await conn.release();
     }
  }
 
 
+ const returncompanyCurrentInfo= async(req,res)=>{
+    if(!req.user) return null;
+    try{
+        const {compId}=req.user;
+        const Query= `SELECT company_id, company_name,location,admin_name,created_at,status FROM company WHERE company_id=?`
+    const [result]=await con.execute(Query,[compId]);
+    if(result.length!==0){
+        return res.status(200).json(result);
+    }
+
+    return
+
+
+    }
+    catch(err){
+    console.log('server Error in Return current companyInfo controller',err.message);
+    }
+ }
+
+
+ const changeCashierInfo= async(req,res)=>{
+   if(!req.user) return null;
+     const {compId}=req.user;
+     const {branch,names,email,phoneno,location,cashierId}=req.body
+   
+     let conn;
+    try{
+        conn=await con.getConnection();
+        await conn.beginTransaction();
+        const Query=`
+        UPDATE cashier SET branch_id=?,cashier_name=?
+        ,cashier_contact=?,cashier_email=? ,cashier_location=?
+         WHERE cashier_id=?`
+      
+       const [verifyPhone]= await conn.execute(`SELECT EXISTS (
+            SELECT 1 FROM cashier WHERE cashier_contact=?
+            ) as isexist`,[phoneno])
+        
+            if(verifyPhone[0].isexist===1){
+                return res.status(409).json({success:false,messagekey:'errors.cashier_phone_exists'})
+            }
+        
+    const [result]= await conn.execute(Query,[branch,names,phoneno,email,location,cashierId]);
+     await conn.commit();
+     if(result.affectedRows===1){
+        return res.status(200).json({success:true,messagekey:'success.save_cashier_changes'})
+     }
+    }
+    catch(err){
+     if(conn){ await conn.rollback()}
+     console.log('Error in Change cashier information controller',err.message);
+     return res.status(500).json({success:false,messagekey:'errors.server_error'})
+    }finally{
+        if(conn) await conn.release();
+    }
+ }
+
+
+ const FetchCurrentcashierInformation= async (req,res)=>{
+    const {cashierId}=req.params;
+    try{
+  
+        const [result]=await con.execute(`SELECT cashier_name,cashier_contact,
+                 cashier_email,cashier_location FROM cashier WHERE cashier_id=?`,[cashierId]);
+
+
+                 if(result.length!==0){
+                    return res.status(200).json(result[0]);
+                 }
+
+            return;
+
+    }
+    catch(err){
+        console.log('Error in fetchcurrentcashierinformation',err.message);
+    }
+ }
+
+
+
+ const DeleteCashier= async(req,res)=>{
+    if(!req.user) return null
+    let {compId}=req.user;
+    const {cashierId}=req.params;
+    let conn;
+    try{
+
+        conn=await con.getConnection();
+        await conn.beginTransaction();
+
+        const [result]= await conn.execute('DELETE FROM cashier WHERE cashier_id=?',[cashierId])
+
+        await conn.commit();
+
+        if(result.affectedRows===1){
+            return res.status(200).json({success:true,messagekey:"success.cashier_del_success"})
+        }
+             
+
+
+    }
+    catch(err){
+        if(conn) await conn.rollback();
+        console.log('Error in delete cashier controller',err.message);
+        return res.status(500).json({success:false,messagekey:'errors.server_error'})
+
+    }
+    finally{
+        if(conn) await conn.release();
+    }
+ }
+
+
+ const SuspendCashier= async(req,res)=>{
+   if(!req.user) return null;
+   const {cashierId}=req.params;
+   let conn;
+    try{
+        conn=await con.getConnection();
+        await conn.beginTransaction();
+        const [result]= await conn.execute(`UPDATE cashier SET status='suspended' WHERE cashier_id=?`,[cashierId]);
+       await conn.commit();
+       if(result.affectedRows===1){
+        return res.status(200).json({success:true,messagekey:"success.suspend_cashier_complete"});
+       }
+
+
+    }
+
+    catch(err){
+     if(conn) await conn.rollback();
+     console.log('Error in suspendcashierController',err.message);
+     return res.status(500).json({success:false,messagekey:"errors.server_error"})
+    } finally{
+        if(conn) await conn.release();
+    }
+ }
+
+
+ const ReactivateCashier= async (req,res)=>{
+    if(!req.user) return null;
+    const {cashierId}=req.params;
+    let conn;
+    try{
+        conn=await con.getConnection();
+        await conn.beginTransaction();
+         
+        const [result]=await conn.execute(`UPDATE cashier SET status='active' WHERE cashier_id=?`,[cashierId])
+
+        await conn.commit();
+
+        if(result.affectedRows===1){
+            return res.status(200).json({success:true,messagekey:'success.reactivate_cashier_complete'})
+        }
+      
+
+    }
+    catch(err){
+      if(conn) await conn.rollback();
+      console.log('Error in Reactivate cashier controller',err.message);
+      return res.status(500).json({success:false,messagekey:"errors.server_error"});
+    }finally{
+        if(conn) await conn.release();
+    }
+ }
+
+
+
+ const FetchFlagedBorrowers= async(req,res)=>{
+    if(!req.user) return null;
+    const {compId}=req.user;
+    console.log(compId)
+     try{
+     const [response]= await con.execute(`SELECT  cf.client_name, cf.reported_by, cf.reason, cf.date, cf.status
+     FROM client_flag cf WHERE company_id=? ORDER BY cf.date DESC;`,[compId]);
+    if(response.length!==0){
+      return res.status(200).json(response);
+    } 
+     
+    return res.status(404).json({size:0,messagekey:"errors.no_flagged_borrowers"})
+
+    }
+    catch(err){
+    console.log('Error in fetchFlagedBorrower controller',err.message);
+    return res.status(500).json({size:1,messagekey:"errors.server_error"});
+    }
+ }
+
+ const RejectRequest =async(req,res)=>{
+    if(!req.user) return null;
+     let {client_name}=req.params;
+     let conn;
+    try{
+        conn=await con.getConnection();
+        conn.beginTransaction();
+        const [response]=await conn.execute(`UPDATE client_flag SET status='rejected' WHERE client_name=?`,[client_name])
+        await conn.commit();
+
+        if(response.affectedRows===1){
+            return res.status(200).json({success:true,size:0,messagekey:'success.reject_success'})
+        }
+
+    }
+    catch(err){
+        if(conn) {await conn.rollback()}
+       return res.status(500).json({success:false,size:1,messagekey:"errors.server_error"})
+    }finally{
+    if(conn) await conn.release();
+    }
+ }
+
+
+ const RequestApproval= async (req,res)=>{
+     if(!req.user) return null;
+     const {client_name}=req.params;
+         let conn;
+     try{
+        conn=await con.getConnection();
+        await conn.beginTransaction();
+
+        const [response]=await conn.execute(`UPDATE client_flag SET status='approved' WHERE client_name=?`,[client_name])
+        
+        await conn.commit();
+      
+        if(response.affectedRows===1){
+       return res.status(200).json({success:true,size:0,messagekey:"success.approval_success"})
+        }
+    
+
+
+     }
+     catch(err){
+      if(conn) {await conn.rollback()}
+        console.log('Error in RequestApproval request',err.message)
+     return res.status(500).json({success:false,size:1,messagekey:"errors.server_error"})
+
+     } finally{
+        if(conn) await conn.release();
+     }
+ }
+
+ const UpdateProfile= async(req,res)=>{
+    if(!req.user) return null;
+ const {names,phone,email,nid}=req.body;
+ const {userId,compId}=req.user;
+
+
+
+       let filename= req.file ? req.file.filename:null;
+    
+    let conn;
+    try{
+        conn=await con.getConnection();
+        await conn.beginTransaction();
+
+ const [exists] = await conn.execute(
+    `SELECT EXISTS ( SELECT 1 FROM users  WHERE email = ? AND user_id != ? ) AS email_exist,
+EXISTS( SELECT 1 FROM users WHERE phone = ? AND user_id != ? ) AS phone_exist,
+ EXISTS( SELECT 1  FROM company WHERE admin_id = ? AND company_id != ?
+        ) AS admin_id_exist`,
+    [email, userId, phone, userId, nid, compId]
+);
+
+if(exists[0].email_exist){
+      return res.status(400).json({success: false,messagekey: 'errors.email_exist' });
+}
+
+if(exists[0].phone_exist){
+ return res.status(400).json({success: false,messagekey: 'errors.phone_exist'});
+}
+    
+if(exists[0].admin_id_exist){
+ return res.status(400).json({success: false,messagekey: 'errors.admin_id_exist'});
+
+}
+
+    await conn.execute(`UPDATE users SET names= ?
+         , email=? , phone= ?, profile_photo=COALESCE(?,profile_photo) 
+         WHERE user_id=?`,[names,email,phone,filename,userId])
+
+    await conn.execute('UPDATE company SET admin_name=?, phone=?,admin_id=? WHERE company_id=?',[
+         names,phone,nid,compId
+        ])
+
+        await conn.commit();
+
+        return res.status(200).json({success:true,messagekey:'success.update_profile_done'})
+
+    }
+    catch(err){
+     if(conn) await conn.rollback();
+     console.log('Error in UpdateProfile',err.message)
+     return res.status(500).json({success:false,messagekey:"errors.server_error"})
+    }finally{
+        if(conn) await conn.release();
+    }
+ }
+
+
+ const FetchProfileInfomation=async (req,res)=>{
+    if(!req.user) return null;
+    const {userId}=req.user;
+  try{
+    const [response]= await con.execute(`
+        SELECT u.names,u.email,u.phone,u.profile_photo
+        ,u.status,u.created_at,u.updated_at, u.role,
+        c.admin_id,c.company_name,c.location
+        ,c.admin_id,c.status AS company_status FROM users u INNER JOIN
+         company c ON u.company_id=c.company_id WHERE
+          user_id=?`,[userId]);
+       
+          if(response.length!==0){
+           return res.status(200).json(response);
+          }
+     
+    }
+    catch(err){
+    console.log('Error in Fetchprofilecontroller',err.message)
+    return res.status(500).json({messagekey:"errors.server_error"})
+} 
+}
+
+
+
 module.exports = {
-    OverviewDash,
-    getonlineuser,
-    Transaction,
-    cashier,
-   CompanyAdmin_info,
-   saveSpadminsetting,
-   sendManualyNotification,
-   ReturnCurrentSetting,
-   GetCompanyAdmin,
-   HandlesendTo,
-   HandleReturnAdminList,
-   HandlesaveAgent,
-   LogAgent,
-   CompanyCurrentSetting,
-   HandleSaveCompanySettings,
-   updateofficecharge,
-   ReturnCompanyBranch,
-   AddCashier,
-   FetchCashier,
-   FetchRepaymentInfo,
-   FetchCUrrentLoans,
-   FetchAllCompanyClient,
-   SmsTransactionLog,
-   currentSMS,PurchaseSMS,
-   ChangeCompanyInfo
+    OverviewDash,getonlineuser,Transaction,cashier,
+   CompanyAdmin_info,saveSpadminsetting,sendManualyNotification,ReturnCurrentSetting,
+   GetCompanyAdmin,HandlesendTo,HandleReturnAdminList,HandlesaveAgent,LogAgent,CompanyCurrentSetting,
+    HandleSaveCompanySettings,updateofficecharge,ReturnCompanyBranch,AddCashier,FetchCashier,FetchRepaymentInfo,
+   FetchCUrrentLoans,FetchAllCompanyClient,SmsTransactionLog,currentSMS,PurchaseSMS,ChangeCompanyInfo,returncompanyCurrentInfo,
+   changeCashierInfo,DeleteCashier,FetchCurrentcashierInformation,SuspendCashier,ReactivateCashier,FetchFlagedBorrowers
+   ,RejectRequest,RequestApproval,UpdateProfile,FetchProfileInfomation
 };
