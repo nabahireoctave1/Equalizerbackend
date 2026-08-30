@@ -3,9 +3,7 @@ const con = require('../mysql_connection/conn');
  let {emitMessageTouserinGroup}=require('../otherController/controller')
  const crypto= require('crypto')
 const {decodeResponse}=require('../HtmlCHars');
-const { off } = require('cluster');
-const { error } = require('console');
-
+const {SendWhattappmessage}=require('../otherController/WhattappController')
 
 
 let counter = 0;
@@ -61,7 +59,7 @@ const OverviewDash = async (req, res) => {
              FROM billing 
              WHERE MONTH(started_date) = MONTH(CURDATE()) 
                AND YEAR(started_date) = YEAR(CURDATE())
-            ) AS monthlyPayment;`);
+            ) AS monthlyPayment`);
 
 
         if (result.length === 1) {
@@ -73,10 +71,10 @@ const OverviewDash = async (req, res) => {
         }
 
     } catch (err) {
-       
-
-        console.log('err in overview dash controller', err.message);
-        return res.status(500).json({ error: "Internal Server Error" });
+               console.log('err in overview dash controller', err.message);
+        return res.status(500).json({
+            size:1,
+           message: "Due to server error occurred system can`t find real dashboard information " });
     }
 };
 
@@ -98,12 +96,15 @@ as cp ON t.company_id=cp.company_id ORDER BY t.transcation_date DESC`)
         }
 
 
-        return res.status(404).json({message:'Transaction not available'})
+        return res.status(404).json({size:0, message:`No curretly transaction found,
+             transaction will appeare here once created`})
     
+
     }
     catch(err){
       console.log('error in transaction controller',err.message)
-              
+      return res.status(500).json({size:1,message:`Due to server error system cant return any transaction logs`})
+  
 } 
     
 }
@@ -116,10 +117,16 @@ const cashier= async (req,res)=>{
         if(result.length!==0){
             return res.status(200).json(result)
         }
-        return res.status(404).json({message:"cashier not available"})
+        return res.status(404).json({
+            size:0,
+            message:`no cashier is currently available, 
+            cashier information will appeare here once registered`})
     }
     catch(err){
         console.log('error in cashier controller',err.message)
+        return res.status(500).json({size:1, 
+            message:`Due to server error system cant find cahier information 
+            cashier information will appeare here once problem resolved`})
     }
 
 } 
@@ -132,13 +139,125 @@ const CompanyAdmin_info= async(req,res)=>{
         if(result.length!==0){
             return res.status(200).json(result)
         }
-        return res.status(404).json({message:'Not found'});
+        return res.status(404).json({size:0,message:'company admin information not found'});
     }
     catch(err){
         console.log('error in company admin controller',err.message)
+        return res.status(500).json({size:1,message: ` Due to server error system cant find company admin informaton`})
     }
 
 }
+
+
+const ReturnCompanyLoans=async (req,res)=>{
+    if(!req.user) return null;
+  try{
+
+const query= `SELECT l.company_id,.l.loan_id,l.client_id,
+l.client_name,l.national_id,l.recieved_amount,l.totalpay,
+l.unpaid_days,l.status as loan_status,l.guarantor_name,
+l.guarantor_address,l.guarantor_contacts,l.closing_date,
+l.fees,l.security,c.company_name FROM loan l
+ INNER JOIN company c ON l.company_id=c.company_id`
+const [result]=await con.execute(query);
+
+let EachCmpLoansMap={};
+if(result.length!==0){
+result.forEach(cmp=>{
+      if(!EachCmpLoansMap[cmp.company_id]){
+        EachCmpLoansMap[cmp.company_id] ={
+          companyId:cmp.company_id,
+          company_name:cmp.company_name,
+          totalLoaned:0,
+          totalUnpaid:0,
+          LoansCount:0,
+          loans:[]
+
+        }
+    }
+
+    if(cmp.loan_status.toLowerCase()==='unpaid'){
+        EachCmpLoansMap[cmp.company_id].totalUnpaid+=Number(cmp.recieved_amount);
+    }
+
+    if(cmp.company_id){
+     EachCmpLoansMap[cmp.company_id].loans.push({
+      loanId:cmp.loan_id,
+      clientId:cmp.client_id,
+    client_name:cmp.client_name,
+    client_nationalId:cmp.national_id,
+    receive_amount:cmp.recieved_amount,
+    totalpay:cmp.totalpay,
+    unpaidDay:cmp.unpaid_days,
+    status:cmp.loan_status,
+    guarantor_name:cmp.guarantor_name,
+    guarantor_address:cmp.guarantor_address,
+    guarantor_contacts:cmp.guarantor_contacts,
+    closing_date:cmp.closing_date,
+    fees:cmp.fees,
+    security:cmp.security
+
+})
+
+EachCmpLoansMap[cmp?.company_id].LoansCount+=1;
+EachCmpLoansMap[cmp?.company_id].totalLoaned+=Number(cmp?.recieved_amount);
+    }
+
+// console.dir(EachCmpLoansMap,{depth:null});
+
+})
+return res.status(200).json(Object.values(EachCmpLoansMap))
+
+
+}
+
+return res.status(404).json({size:0,title:"Loans not found",
+    message:"No loans have been recorded by any company yet, company loans will appear here once recorded"})
+
+
+  }
+  catch(err){
+    console.log('Error in returncompanyLoans controller',err.message)
+   return res.status(500).json({size:1,title:"Error occured",
+    message:"Server error occured system can`t find current company loans"})
+    
+  }
+}
+
+
+const ReturnCurrentCompany= async(req,res)=>{
+    if(!req.user) return null;
+    try{
+        const query=`
+       SELECT c.company_name, c.company_id, c.admin_name, c.status,
+        ( SELECT COALESCE(SUM(l.recieved_amount),0) FROM loan l
+          WHERE l.company_id = c.company_id ) AS total_loans, 
+          ( SELECT COALESCE(SUM(r.client_amount), 0) FROM repayment r 
+           INNER JOIN loan l ON l.loan_id = r.loan_id WHERE l.company_id = c.company_id )
+            AS total_repayments,   COALESCE(b.amount, 0) AS activation_payment, 
+            COALESCE( DATE_FORMAT(b.started_date, '%d-%m-%Y'), 'Not activated' )
+        AS activation_date FROM company c LEFT JOIN billing b ON b.company_id = c.company_id;
+        ` 
+             const [result]=await con.execute(query)
+
+             if(result.length!==0){
+                return res.status(200).json(result);
+             }
+
+              return res.status(404).json({size:0,title:'No company has recorded yet',
+                message:`company information Not available , company 
+                will appeare here once registered`})
+
+
+    }
+
+    catch(err){
+      console.log('Error in return company controller',err.message)
+       return res.status(500).json(
+        {size:1,title:"Error occured",message:'Server Error occured can`t find company information'})
+    }
+}
+
 
 
 const sendManualyNotification= async(io,socket)=>{
@@ -315,14 +434,17 @@ const HandleReturnAdminList= async(req,res)=>{
              as u ON cp.admin_sys_Id=u.user_id`);
 
              if(result.length===0){
-                return res.status(404).json({message:'No admin information found'});
+                return res.status(404).json({size:0,title:"No admin information found",
+                    message:'No admin information found'});
 
              }
 
         return res.status(200).json(decodeResponse(result));  
 }
     catch(err){
-        console.log('Error in HandleReturnAdminList controller ',err.message)
+        console.log('Error in HandleReturnAdminList controller ',err.message);
+        return res.status(500).json({size:1,title:"Error occured" ,
+            message:"Server Error occured can`t find current admin information"});
     }
 }
 
@@ -381,12 +503,12 @@ const LogAgent=async(req,res)=>{
         return res.status(200).json(decodeResponse(result));
 
     }
-    return res.status(404).json({message:"Agent information not found"})
-
+    return res.status(404).json({size:0,title:"information not found", 
+        message:"No agent had been recorded here agent will appeare here once registered"})
     
     }
     catch(err){
-     return res.status(500).json({message:"server error try again"})
+     return res.status(500).json({size:1,title:"Error occurred", message:"Server error occurred system can`t find agent information"})
     }
 }
 
@@ -406,7 +528,7 @@ const CompanyCurrentSetting= async (req,res)=>{
      ORDER BY o.branch_id ASC, o.startup_amount ASC`, [compId]);
 
          if(result.length!==0){
-            return res.status(200).json(result);
+            return res.status(200).json(decodeResponse(result));
          }
          else{
             return res.status(404).json({success:false, size:0,message:'errors.setting_required_desc'})
@@ -580,20 +702,34 @@ const AddCashier= async(req,res)=>{
     conn=await con.getConnection();
     await conn.beginTransaction();
     const cashierId=await generateCashierUniqueId(conn);
-    await conn.execute(`INSERT INTO cashier(cashier_id,branch_id,company_id,cashier_name, 
+    
+   const [phone] = await conn.execute(
+    `SELECT EXISTS ( SELECT 1 FROM cashier WHERE cashier_contact = ?) AS phone_exist`,
+    [payload.phoneno]
+);
+
+if(phone[0].phone_exist===1){
+    return res.status(400).json({success:false,messagekey:"errors.cashier_phone_exists"})
+}
+
+await conn.execute(`INSERT INTO cashier(cashier_id,branch_id,company_id,cashier_name, 
         cashier_contact,cashier_email,cashier_location) VALUES (?,?,?,?,?,?,?)`,[
          cashierId,payload.branch,compId,payload.names,payload.phoneno,payload.email,payload.location
         ])
 
     await conn.commit();
-    return res.status(200).json({success:true,message:"Cashier have been added"})
+
+    let message=`hello cashier ${payload.names} Your security link is http://localhost/secure-password/?tkn=1q2q8w`
+    
+    SendWhattappmessage(payload.phone,message,payload.email    )
+    return res.status(200).json({success:true,messagekey:"success.cashier_added"})
 
 
   }
   catch(err){
     if(conn){await conn.rollback()}
     console.log('Error in addcashier controller',err.message)
-    return res.status(500).json({success:false,message:"Failed to save cashiers"})
+    return res.status(500).json({success:false,messagekey:"errors.server_error"})
   }finally{
     if(conn) await conn.release();
   }
@@ -615,9 +751,9 @@ const FetchCashier= async(req,res)=>{
 FROM cashier c
 INNER JOIN branch b
     ON c.branch_id = b.branch_id
-           WHERE c.company_id = ?`,[compId])
+           WHERE c.company_id = ? ORDER BY c.id ASC`,[compId])
        if(result.length!==0){
-        return res.status(200).json(result);
+        return res.status(200).json(decodeResponse(result));
        }
        return res.status(404).json({size:0,messagekey:"errors.cashiers_not_found"})
      }catch(err){
@@ -641,7 +777,7 @@ INNER JOIN branch b
              r.loan_id=l.loan_id 
               WHERE r.company_id= ?`,[compId]);
               if(result.length!==0){
-              return res.status(200).json(result)
+              return res.status(200).json(decodeResponse(result))
 
               }
               return res.status(404).json({size:0,messagekey:"errors.repayment_not_found"})
@@ -714,7 +850,6 @@ INNER JOIN branch b
 
         })
          
-        // console.dir(branchsMap,{depth:null,color    :true})/////
 
         return res.status(200).json(decodeResponse(Object.values(branchsMap)));
 
@@ -739,12 +874,11 @@ INNER JOIN branch b
       
         const [response]=await con.execute(`
             SELECT c.national_id, c.company_id,c.branch_id,c.client_name,
-             c.location, c.phone,c.client_address,b.branch_name,l.status as loan_status FROM
-              client c INNER JOIN branch b ON c.branch_id=b.branch_id LEFT JOIN loan l 
-            ON c.client_id=l.client_id  WHERE c.company_id=? ORDER BY c.created_at ASC`,[compId])
-           
+             c.location, c.phone,c.client_address,b.branch_name FROM 
+            client c INNER JOIN branch b ON c.branch_id=b.branch_id  
+            WHERE c.company_id=? ORDER BY c.created_at ASC`,[compId])
             if(response.length!==0){
-                return res.status(200).json(response)
+                return res.status(200).json(decodeResponse(response))
             }
 
             return res.status(404).json({size:0,messagekey:`errors.borrowers_not_found`})
@@ -882,7 +1016,8 @@ console.log(req.body);
     if(!req.user) return null;
     try{
         const {compId}=req.user;
-        const Query= `SELECT company_id, company_name,location,admin_name,created_at,status FROM company WHERE company_id=?`
+        const Query= `SELECT company_id, company_name,location,admin_name,created_at,
+        status FROM company WHERE company_id=?`
     const [result]=await con.execute(Query,[compId]);
     if(result.length!==0){
         return res.status(200).json(result);
@@ -903,7 +1038,7 @@ console.log(req.body);
      const {compId}=req.user;
      const {branch,names,email,phoneno,location,cashierId}=req.body
    
-     let conn;
+     let     conn;
     try{
         conn=await con.getConnection();
         await conn.beginTransaction();
@@ -913,8 +1048,8 @@ console.log(req.body);
          WHERE cashier_id=?`
       
        const [verifyPhone]= await conn.execute(`SELECT EXISTS (
-            SELECT 1 FROM cashier WHERE cashier_contact=?
-            ) as isexist`,[phoneno])
+            SELECT 1 FROM cashier WHERE cashier_contact=? AND cashier_id != ?
+            ) as isexist`,[phoneno,cashierId])
         
             if(verifyPhone[0].isexist===1){
                 return res.status(409).json({success:false,messagekey:'errors.cashier_phone_exists'})
@@ -945,7 +1080,7 @@ console.log(req.body);
 
 
                  if(result.length!==0){
-                    return res.status(200).json(result[0]);
+                    return res.status(200).json(decodeResponse(result[0]));
                  }
 
             return;
@@ -1025,7 +1160,7 @@ console.log(req.body);
         conn=await con.getConnection();
         await conn.beginTransaction();
          
-        const [result]=await conn.execute(`UPDATE cashier SET status='active' WHERE cashier_id=?`,[cashierId])
+        const [result]=await conn.execute(`UPDATE cashier SET status='active' WHERE cashier_id=`,[cashierId])
 
         await conn.commit();
 
@@ -1049,7 +1184,6 @@ console.log(req.body);
  const FetchFlagedBorrowers= async(req,res)=>{
     if(!req.user) return null;
     const {compId}=req.user;
-    console.log(compId)
      try{
      const [response]= await con.execute(`SELECT  cf.client_name, cf.reported_by, cf.reason, cf.date, cf.status
      FROM client_flag cf WHERE company_id=? ORDER BY cf.date DESC;`,[compId]);
@@ -1209,5 +1343,5 @@ module.exports = {
     HandleSaveCompanySettings,updateofficecharge,ReturnCompanyBranch,AddCashier,FetchCashier,FetchRepaymentInfo,
    FetchCUrrentLoans,FetchAllCompanyClient,SmsTransactionLog,currentSMS,PurchaseSMS,ChangeCompanyInfo,returncompanyCurrentInfo,
    changeCashierInfo,DeleteCashier,FetchCurrentcashierInformation,SuspendCashier,ReactivateCashier,FetchFlagedBorrowers
-   ,RejectRequest,RequestApproval,UpdateProfile,FetchProfileInfomation
+   ,RejectRequest,RequestApproval,UpdateProfile,FetchProfileInfomation,ReturnCompanyLoans,ReturnCurrentCompany
 };

@@ -78,8 +78,8 @@ const SendWhattappmessage = async (phonenumber, message, email) => {
     try {
         if (!sock) return false;
 
-        let cleanedphoneno = phonenumber.replace('+', '').trim();
-        if (cleanedphoneno.startsWith('0')) {
+        let cleanedphoneno = phonenumber?.replace('+', '').trim();
+        if (cleanedphoneno?.startsWith('0')) {
             cleanedphoneno = '250' + cleanedphoneno.substring(1);
         }
 

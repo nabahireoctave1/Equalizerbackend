@@ -10,6 +10,7 @@ const validatecashierRequest= require('../Middleware/cashier.middleware')
 const validateSMSPackageInputs=require('../Middleware/purchaseSMS.validatation.middleware')
 const ValidatechangedCompInfo= require('../Middleware/changeComp.info.middleware')
 const ValidatesCashierChange=require('../Middleware/validatecashier.changes.middleware')
+const validateProfileInformation= require('../Middleware/updateProfile.middleware')
 const upload=require('../Middleware/upload');
 const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  ReturnCurrentSetting,GetCompanyAdmin,
@@ -36,7 +37,9 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  RejectRequest,
  RequestApproval,
  UpdateProfile,
- FetchProfileInfomation
+ FetchProfileInfomation,
+ ReturnCompanyLoans,
+ ReturnCurrentCompany
  } = require('../MainController/Controllers')
 const { VerifyToken,VerifyRole } = require('../Middleware/VerifyToken_Role')
 const validator = require('../Middleware/settingInputValidator')
@@ -55,6 +58,9 @@ router.get('/company-admin',VerifyToken,VerifyRole('superadmin'),GetCompanyAdmin
 router.get('/admin-list',VerifyToken,VerifyRole('superadmin'),HandleReturnAdminList);
 router.post('/add-agent-data',VerifyToken,VerifyRole('superadmin'),ValidateAgentInfo,HandlesaveAgent)
 router.get('/agent-info',VerifyToken,VerifyRole('superadmin'),LogAgent);
+router.get('/company-Loans',VerifyToken,VerifyRole('superadmin'),ReturnCompanyLoans)
+router.get('/current-company',VerifyToken,VerifyRole('superadmin'),ReturnCurrentCompany)
+
 router.get('/company-current-setting',VerifyToken,VerifyRole('subadmin'),CompanyCurrentSetting)
 router.post('/save-company-settings',VerifyToken,VerifyRole('subadmin'),validateInput,HandleSaveCompanySettings)
 router.put('/Handle-toggle-on-off-office-setting',VerifyToken,VerifyRole('subadmin'),updateofficecharge)
@@ -79,7 +85,8 @@ router.put('/reactivate-cashier/:cashierId',VerifyToken,VerifyRole('subadmin'),R
 router.get('/client-flag',VerifyToken,VerifyRole('subadmin'),FetchFlagedBorrowers)
 router.put('/reject-req/:client_name',VerifyToken,VerifyRole('subadmin'),RejectRequest)
 router.put('/request-approval/:client_name',VerifyToken,VerifyRole('subadmin'),RequestApproval)
-router.post('/update-profile',VerifyToken,VerifyRole('subadmin'),upload.single('profile_photo'),UpdateProfile)
+router.post('/update-profile',VerifyToken,VerifyRole('subadmin'),
+upload.single('profile_photo'),validateProfileInformation,UpdateProfile)
 router.get('/profile-information',VerifyToken,VerifyRole('subadmin'),FetchProfileInfomation)
 
 module.exports=router

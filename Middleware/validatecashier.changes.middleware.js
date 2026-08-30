@@ -5,12 +5,13 @@ const {escapeHtmlChar}=require('../HtmlCHars');
 
 const ValidatesCashierChange=[
 
-    body('names').notEmpty().withMessage('Names required !').customSanitizer(escapeHtmlChar),
+    body('names').notEmpty().withMessage('nc.validationMessage.names_require').customSanitizer(escapeHtmlChar),
     body('email').optional({nullable:true}),
-    body('phoneno').notEmpty().withMessage('Please enter phone number').bail().isNumeric().withMessage('Phone number must be number')
-    .isLength({min:10,max:10}).withMessage('Phone number must be 10 digits'),
-    body('location').notEmpty().withMessage('Cashier operating location required !').customSanitizer(escapeHtmlChar),
-    body('branch').notEmpty().withMessage('Branch required !'),
+    body('phoneno').notEmpty().withMessage('nc.validationMessage.phone_number_required').bail().isNumeric().
+    withMessage('nc.validationMessage.phone_is_numeric')
+    .isLength({min:10,max:10}).withMessage('nc.validationMessage.phone_length'),
+    body('location').notEmpty().withMessage('nc.validationMessage.location_required').customSanitizer(escapeHtmlChar),
+    body('branch').notEmpty().withMessage('nc.validationMessage.branch_required'),
     (req,res,next)=>{
         const errors= validationResult(req);
       
