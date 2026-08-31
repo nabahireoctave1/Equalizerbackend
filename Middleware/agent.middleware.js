@@ -5,13 +5,15 @@ const {escapeHtmlChar}=require('../HtmlCHars')
 
 
 const ValidateAgentInfo= [
-   body('names').trim().notEmpty().withMessage('names required!').bail()
+   body('names').trim().notEmpty().withMessage('Names required!').bail()
    .customSanitizer(escapeHtmlChar),
-   body('phone').trim().notEmpty().withMessage('phone number required!').bail()
-   .isLength({min:10,max:10}).withMessage('phone number must be 10 digits!').isNumeric()
-   .withMessage('phone number must be number!'),
-   body('email').trim().notEmpty().withMessage('email required!').bail().isEmail().withMessage('Invalid email format').normalizeEmail(),
-   body('location').trim().notEmpty().withMessage('location required!').customSanitizer(escapeHtmlChar),
+   body('phone').trim().notEmpty().withMessage('Phone number required!').bail()
+   .isLength({min:10,max:10}).withMessage('Phone number must be 10 digits!').isNumeric()
+   .withMessage('Phone number must be number!'),
+   body('email').trim().notEmpty().withMessage('Email required!').bail().isEmail()
+   .withMessage('Invalid email format').normalizeEmail(),
+   body('location').trim().notEmpty().withMessage('Location required!')
+   .customSanitizer(escapeHtmlChar),
    (req,res,next)=>{
    
     const errors= validationResult(req)
