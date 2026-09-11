@@ -10,7 +10,7 @@ const http= require('http')
  const morgan=require('morgan');
 
 
- const {StartWhattApp,getWhatsappStatus}= require('./otherController/WhattappController');
+ const {getWhatsappStatus,StartWhattApp}= require('./otherController/WhattappController');
  let {getonlineuser,sendManualyNotification,HandlesendTo}= require('./MainController/Controllers');
 const path = require('path');
 
@@ -43,8 +43,8 @@ const io= new Server(server,{
     }
 })
 
+StartWhattApp();
 
-StartWhattApp(io)
 
 io.use((socket, next) => {
   try {
@@ -62,6 +62,7 @@ io.use((socket, next) => {
     return next(new Error("Unauthorized"));
   }
 });
+
 const activeuser=new Set();
 
 

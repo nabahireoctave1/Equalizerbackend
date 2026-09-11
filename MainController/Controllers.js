@@ -696,6 +696,11 @@ const AddCashier= async(req,res)=>{
     const {compId}=req.user;
     const payload=req.body;
     let conn;
+const token= crypto.randomBytes(4).toString('hex');
+const hashedToken=crypto.createHash('sha256').update(token).digest('hex');
+const Link=`http://localhost:5173/security-setting/${token}`;
+
+
 
   try{
    
@@ -717,11 +722,20 @@ await conn.execute(`INSERT INTO cashier(cashier_id,branch_id,company_id,cashier_
          cashierId,payload.branch,compId,payload.names,payload.phoneno,payload.email,payload.location
         ])
 
-    await conn.commit();
+const [user]= await conn.execute('INSERT INTO users(user_id,company_id,names,email,phone,role) VALUES (?,?,?,?,?,?)',
+    [cashierId,compId,payload.names,payload.email,payload.phoneno,'cashier'])
 
-    let message=`hello cashier ${payload.names} Your security link is http://localhost/secure-password/?tkn=1q2q8w`
+ await conn.execute(`INSERT INTO linktoken(userid,token,isused,expiration)
+           VALUES(?,?,?,NOW()+INTERVAL 15 MINUTE)`,[user?.insertId,hashedToken,'0'])
+
+    await conn.commit();
     
-    SendWhattappmessage(payload.phone,message,payload.email    )
+    let messageTitle=`*Hello cashier ${payload.names}*`
+    let message=`${messageTitle.toUpperCase()}
+     Open Link bellow and Authenticate your accounts   ${Link}`
+    
+    SendWhattappmessage(payload.phoneno,message,payload.email);
+    console.log(Link);
     return res.status(200).json({success:true,messagekey:"success.cashier_added"})
 
 

@@ -226,7 +226,6 @@ else{
 
 const PasswordSetting=async(req,res)=>{
   const {password,confirmpassword,tkn}=req.body;
-  console.log(tkn)
   
   let conn;
   try{
@@ -238,14 +237,13 @@ await conn.beginTransaction();
 const salt=await bcrypt.genSalt(8)
 const hashedpassword=await bcrypt.hash(password,salt);
 const hashedtoken= crypto.createHash('sha256').update(tkn).digest('hex')
-
 const [vlink]= await conn.execute('SELECT * FROM `linktoken` WHERE Token=? AND isused=?',[hashedtoken,'0'])
 if(vlink.length===0){
   await conn.rollback()
   return res.status(401).json({success:false,message:"Unauthorized Link"})
 }
 
- if(new Date(vlink[0].expiration)<new Date()){
+ if(new Date(vlink[0].expiration) < new Date()){
   await conn.rollback();
   return res.status(401).json('Link had been expired')
  }
