@@ -159,16 +159,12 @@ const Login = async (req,res)=>{
   
   const {phone,password}=req.body;
 
-  let conn;
   try{
 
- conn=await con.getConnection();
 
- await conn.beginTransaction();
 
- const [result]=await conn.execute('SELECT * FROM users WHERE phone=?',[phone]) 
+ const [result]=await con.execute('SELECT * FROM users WHERE phone=?',[phone]) 
   if(result.length===0){
-    await conn.rollback()
   return res.status(401).json({success:false ,message:`Access denied check your credentials!`})
  }
 
@@ -177,7 +173,6 @@ const Login = async (req,res)=>{
  const status= result[0].status
  const name= result[0].name;
  if(status==='inactive'){
-  await conn.rollback()
   return res.status(401).json( {success:false, message:`Dear ${name}  your account have been
      locked please contact support for assistance`})
  }
@@ -185,13 +180,13 @@ const Login = async (req,res)=>{
  const user= result[0]
 
   if(user.password==null||undefined){
-    await conn.rollback()
     return res.status(400).json({message:'Password configuration required !'})
  }
 
 const isvalid= await bcrypt.compare(password,user.password)
 if(isvalid){
-   const token= jwt.sign({userId:user.user_id,name:user.names,compId:user.company_id,role:user.role,phone:user.phone},process.env.JWT_SEC ,{expiresIn:'1d'})
+   const token= jwt.sign({userId:user.user_id,branchId:user.branch_id,name:user.names,compId:user.company_id,
+    role:user.role,phone:user.phone},process.env.JWT_SEC ,{expiresIn:'1d'})
   
    if(token){
    return res.status(201).json({success:true,message:"Authentication success",tkn:token})
@@ -199,7 +194,6 @@ if(isvalid){
    }
 }
 else{
-  await conn.rollback();
   return res.status(401).json({success:false,message:"Access denied check your credentials!"})
 }
 
@@ -208,17 +202,12 @@ else{
 
 
 
-  await conn.commit()
 
 
   }
   catch(err){
-    if(conn)await conn.rollback();
       console.log('error in login controller',err.message)
     return res.status(500).json({success:false,message:'Login failed try again'})
-
-  }finally{
-    if(conn) await conn.release()
 
   }
 }

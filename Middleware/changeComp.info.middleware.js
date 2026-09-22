@@ -1,11 +1,10 @@
 
 const {body,validationResult}=require('express-validator');
-const {escapeHtmlChar}= require('../HtmlCHars')
 
 
 const ValidatechangedCompInfo= [
- body('companyName').notEmpty().withMessage('Company name required !').customSanitizer(escapeHtmlChar),
- body('companyAdmin').notEmpty().withMessage('Company admin name required !').customSanitizer(escapeHtmlChar),
+ body('companyName').notEmpty().withMessage('Company name required !'),
+ body('companyAdmin').notEmpty().withMessage('Company admin name required !'),
  body('companyLocation').notEmpty().withMessage('Company  operating location required !'),
 
  (req,res,next)=>{

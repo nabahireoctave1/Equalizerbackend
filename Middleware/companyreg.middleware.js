@@ -1,6 +1,5 @@
 const { body, validationResult } = require("express-validator");
 
-const {escapeHtmlChar}=require('../HtmlCHars')
 
 
 
@@ -8,7 +7,7 @@ const companyValidation = [
 
   body("companyNames")
     .trim()
-    .notEmpty().customSanitizer(escapeHtmlChar)
+    .notEmpty()
     .withMessage("Company name required!")
     .bail()
     .isLength({ min: 2,max: 100})
@@ -21,8 +20,7 @@ const companyValidation = [
     .withMessage("Admin name required!")
     .bail()
     .isLength({ min: 3 })
-    .withMessage("Admin name too short!")
-    .customSanitizer(escapeHtmlChar),
+    .withMessage("Admin name too short!"),
 
   body("adminPhone")
     .trim()
@@ -44,9 +42,7 @@ const companyValidation = [
   body("companyLocation")
     .trim()
     .notEmpty()
-    .withMessage("Location required!")
-    .customSanitizer(escapeHtmlChar),
-
+    .withMessage("Location required!"),
   body("adminEmail")
     .trim()
     .optional({nullable:true})

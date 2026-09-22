@@ -11,7 +11,10 @@ const validateSMSPackageInputs=require('../Middleware/purchaseSMS.validatation.m
 const ValidatechangedCompInfo= require('../Middleware/changeComp.info.middleware')
 const ValidatesCashierChange=require('../Middleware/validatecashier.changes.middleware')
 const validateProfileInformation= require('../Middleware/updateProfile.middleware')
+const validateInfo= require('../Middleware/validate.ClientInfo')
+const validatePayments= require('../Middleware/Paying.validation.middleware')
 const upload=require('../Middleware/upload');
+const Upload= require('../Middleware/collateral.upload')
 const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  ReturnCurrentSetting,GetCompanyAdmin,
  HandleReturnAdminList,
@@ -41,6 +44,10 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  ReturnCompanyLoans,
  ReturnCurrentCompany
  } = require('../MainController/Controllers')
+
+ const { FindCurrentBranchBorrowers, HandleSaveClientnfo, HandlePay} =require('../cashier_Controllers/cashier.controllers')
+
+
 const { VerifyToken,VerifyRole } = require('../Middleware/VerifyToken_Role')
 const validator = require('../Middleware/settingInputValidator')
 const router=express.Router()
@@ -88,5 +95,10 @@ router.put('/request-approval/:client_name',VerifyToken,VerifyRole('subadmin'),R
 router.post('/update-profile',VerifyToken,VerifyRole('subadmin'),
 upload.single('profile_photo'),validateProfileInformation,UpdateProfile)
 router.get('/profile-information',VerifyToken,VerifyRole('subadmin'),FetchProfileInfomation)
+
+router.get('/branch-borrowers',VerifyToken,VerifyRole('cashier'),FindCurrentBranchBorrowers)
+router.post('/save_client_info',VerifyToken,VerifyRole('cashier'),Upload.single('secPicture'),validateInfo,HandleSaveClientnfo)
+router.post('/PayLoan',VerifyToken,VerifyRole('cashier'),validatePayments,HandlePay)
+
 
 module.exports=router

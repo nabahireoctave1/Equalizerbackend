@@ -2,7 +2,6 @@ require('dotenv').config();
 const con = require('../mysql_connection/conn');
  let {emitMessageTouserinGroup}=require('../otherController/controller')
  const crypto= require('crypto')
-const {decodeResponse}=require('../HtmlCHars');
 const {SendWhattappmessage}=require('../otherController/WhattappController')
 
 
@@ -154,10 +153,10 @@ const ReturnCompanyLoans=async (req,res)=>{
   try{
 
 const query= `SELECT l.company_id,.l.loan_id,l.client_id,
-l.client_name,l.national_id,l.recieved_amount,l.totalpay,
-l.unpaid_days,l.status as loan_status,l.guarantor_name,
-l.guarantor_address,l.guarantor_contacts,l.closing_date,
-l.fees,l.security,c.company_name FROM loan l
+l.client_name,l.national_id,l.amount_given,l.totalpay,l.status
+ as loan_status,l.guarantor_name,
+l.guarantor_address,l.guarantor_contacts,
+l.fees,l.security_name as security,c.company_name FROM loan l
  INNER JOIN company c ON l.company_id=c.company_id`
 const [result]=await con.execute(query);
 
@@ -177,7 +176,7 @@ result.forEach(cmp=>{
     }
 
     if(cmp.loan_status.toLowerCase()==='unpaid'){
-        EachCmpLoansMap[cmp.company_id].totalUnpaid+=Number(cmp.recieved_amount);
+        EachCmpLoansMap[cmp.company_id].totalUnpaid+=Number(cmp.amount_given);
     }
 
     if(cmp.company_id){
@@ -186,7 +185,7 @@ result.forEach(cmp=>{
       clientId:cmp.client_id,
     client_name:cmp.client_name,
     client_nationalId:cmp.national_id,
-    receive_amount:cmp.recieved_amount,
+    amount_given:cmp.amount_given,
     totalpay:cmp.totalpay,
     unpaidDay:cmp.unpaid_days,
     status:cmp.loan_status,
@@ -230,7 +229,7 @@ const ReturnCurrentCompany= async(req,res)=>{
     try{
         const query=`
        SELECT c.company_name, c.company_id, c.admin_name, c.status,
-        ( SELECT COALESCE(SUM(l.recieved_amount),0) FROM loan l
+        ( SELECT COALESCE(SUM(l.amount_given),0) FROM loan l
           WHERE l.company_id = c.company_id ) AS total_loans, 
           ( SELECT COALESCE(SUM(r.client_amount), 0) FROM repayment r 
            INNER JOIN loan l ON l.loan_id = r.loan_id WHERE l.company_id = c.company_id )
@@ -262,7 +261,6 @@ const ReturnCurrentCompany= async(req,res)=>{
 
 const sendManualyNotification= async(io,socket)=>{
     let conn;
-
     try{
     conn= await con.getConnection();
     await conn.beginTransaction();
@@ -274,8 +272,8 @@ const sendManualyNotification= async(io,socket)=>{
      
        for  (let comp of company){
         let companyId=comp.company_id
-         
-        const [savenotif]= await con.execute(`INSERT INTO notification(company_id, notification) VALUES (?,?)`,[companyId,notif])
+                 const [savenotif]= await con.execute(`INSERT INTO notification(company_id, notification) 
+            VALUES (?,?)`,[companyId,notif])
 
         await emitMessageTouserinGroup(
             io,
@@ -301,9 +299,7 @@ const sendManualyNotification= async(io,socket)=>{
 
 
 const saveSpadminsetting= async(req,res)=>{
-    let {reminder,overdue,lockafter,graceperiod,interest,agentreward}=  req.body;
-    
-    
+    let {reminder,overdue,lockafter,graceperiod,interest,agentreward}=  req.body;    
     let conn;
     try{
     conn= await con.getConnection();
@@ -359,7 +355,7 @@ const ReturnCurrentSetting= async(req,res)=>{
     let success=true;
     data.success=success;
     
-    return res.status(200).json(decodeResponse(data))
+    return res.status(200).json(data)
     }
 
     catch(err){
@@ -374,7 +370,7 @@ const GetCompanyAdmin= async(req,res)=>{
     try{
      let [result]= await con.execute('SELECT company_id,admin_name,company_name FROM company');
      if(result.length!==0){
-        return res.status(200).json(decodeResponse(result));
+        return res.status(200).json(result);
      }
 
     }
@@ -439,7 +435,7 @@ const HandleReturnAdminList= async(req,res)=>{
 
              }
 
-        return res.status(200).json(decodeResponse(result));  
+        return res.status(200).json(result);  
 }
     catch(err){
         console.log('Error in HandleReturnAdminList controller ',err.message);
@@ -500,7 +496,7 @@ const LogAgent=async(req,res)=>{
     try{
     const [result]= await con.execute('SELECT * FROM `agent`')
     if(result.length!==0){
-        return res.status(200).json(decodeResponse(result));
+        return res.status(200).json(result);
 
     }
     return res.status(404).json({size:0,title:"information not found", 
@@ -528,7 +524,7 @@ const CompanyCurrentSetting= async (req,res)=>{
      ORDER BY o.branch_id ASC, o.startup_amount ASC`, [compId]);
 
          if(result.length!==0){
-            return res.status(200).json(decodeResponse(result));
+            return res.status(200).json(result);
          }
          else{
             return res.status(404).json({success:false, size:0,message:'errors.setting_required_desc'})
@@ -695,6 +691,11 @@ const ReturnCompanyBranch=async(req,res)=>{
 const AddCashier= async(req,res)=>{
     const {compId}=req.user;
     const payload=req.body;
+
+    if(!payload.branchId){
+    console.log(payload)
+    }
+    console.log(payload)
     let conn;
 const token= crypto.randomBytes(4).toString('hex');
 const hashedToken=crypto.createHash('sha256').update(token).digest('hex');
@@ -713,8 +714,10 @@ const Link=`http://localhost:5173/security-setting/${token}`;
     [payload.phoneno]
 );
 
+// const [isphonexistinUser]= await conn.execute('')
+
 if(phone[0].phone_exist===1){
-    return res.status(400).json({success:false,messagekey:"errors.cashier_phone_exists"})
+return res.status(400).json({success:false,messagekey:"errors.cashier_phone_exists"})
 }
 
 await conn.execute(`INSERT INTO cashier(cashier_id,branch_id,company_id,cashier_name, 
@@ -722,8 +725,8 @@ await conn.execute(`INSERT INTO cashier(cashier_id,branch_id,company_id,cashier_
          cashierId,payload.branch,compId,payload.names,payload.phoneno,payload.email,payload.location
         ])
 
-const [user]= await conn.execute('INSERT INTO users(user_id,company_id,names,email,phone,role) VALUES (?,?,?,?,?,?)',
-    [cashierId,compId,payload.names,payload.email,payload.phoneno,'cashier'])
+const [user]= await conn.execute('INSERT INTO users(user_id,company_id,branch_id,names,email,phone,role) VALUES (?,?,?,?,?,?,?)',
+    [cashierId,compId,payload.branch,payload.names,payload.email,payload.phoneno,'cashier'])
 
  await conn.execute(`INSERT INTO linktoken(userid,token,isused,expiration)
            VALUES(?,?,?,NOW()+INTERVAL 15 MINUTE)`,[user?.insertId,hashedToken,'0'])
@@ -731,8 +734,9 @@ const [user]= await conn.execute('INSERT INTO users(user_id,company_id,names,ema
     await conn.commit();
     
     let messageTitle=`*Hello cashier ${payload.names}*`
-    let message=`${messageTitle.toUpperCase()}
-     Open Link bellow and Authenticate your accounts   ${Link}`
+    let message=`${messageTitle.toUpperCase()} %0A%
+     Open Link bellow and Authenticate your accounts %0A% 
+       ${Link}`
     
     SendWhattappmessage(payload.phoneno,message,payload.email);
     console.log(Link);
@@ -767,7 +771,7 @@ INNER JOIN branch b
     ON c.branch_id = b.branch_id
            WHERE c.company_id = ? ORDER BY c.id ASC`,[compId])
        if(result.length!==0){
-        return res.status(200).json(decodeResponse(result));
+        return res.status(200).json(result);
        }
        return res.status(404).json({size:0,messagekey:"errors.cashiers_not_found"})
      }catch(err){
@@ -791,7 +795,7 @@ INNER JOIN branch b
              r.loan_id=l.loan_id 
               WHERE r.company_id= ?`,[compId]);
               if(result.length!==0){
-              return res.status(200).json(decodeResponse(result))
+              return res.status(200).json(result)
 
               }
               return res.status(404).json({size:0,messagekey:"errors.repayment_not_found"})
@@ -811,10 +815,10 @@ INNER JOIN branch b
     try{  
        const branchsMap ={};
         const [result]=await con.execute(`
-    SELECT b.branch_name,b.branch_id, l.client_id,l.recieved_amount,l.totalpay,l.fees,
+    SELECT b.branch_name,b.branch_id, l.client_id,l.totalpay,l.fees,
      l.national_id,l.guarantor_name, l.guarantor_address,l.guarantor_contacts,l.approved,
-      l.unpaid_days, l.closing_date,l.client_name,l.amount_given,l.status,l.pay_frequency,
-      l.security FROM branch b LEFT JOIN loan l ON b.branch_id=l.branch_id
+      l.client_name,l.amount_given,l.status,l.pay_frequency,
+      l.security_name as security FROM branch b LEFT JOIN loan l ON b.branch_id=l.branch_id
         WHERE l.company_id=?`,[compId])
          if(result.length!==0){
         result.forEach((row)=>{
@@ -865,7 +869,7 @@ INNER JOIN branch b
         })
          
 
-        return res.status(200).json(decodeResponse(Object.values(branchsMap)));
+        return res.status(200).json(Object.values(branchsMap));
 
         }
 
@@ -888,11 +892,11 @@ INNER JOIN branch b
       
         const [response]=await con.execute(`
             SELECT c.national_id, c.company_id,c.branch_id,c.client_name,
-             c.location, c.phone,c.client_address,b.branch_name FROM 
+             c.client_address as location, c.phone,c.client_address,b.branch_name FROM 
             client c INNER JOIN branch b ON c.branch_id=b.branch_id  
             WHERE c.company_id=? ORDER BY c.created_at ASC`,[compId])
             if(response.length!==0){
-                return res.status(200).json(decodeResponse(response))
+                return res.status(200).json(response)
             }
 
             return res.status(404).json({size:0,messagekey:`errors.borrowers_not_found`})
@@ -1094,7 +1098,7 @@ console.log(req.body);
 
 
                  if(result.length!==0){
-                    return res.status(200).json(decodeResponse(result[0]));
+                    return res.status(200).json(result[0]);
                  }
 
             return;
@@ -1174,7 +1178,7 @@ console.log(req.body);
         conn=await con.getConnection();
         await conn.beginTransaction();
          
-        const [result]=await conn.execute(`UPDATE cashier SET status='active' WHERE cashier_id=`,[cashierId])
+        const [result]=await conn.execute(`UPDATE cashier SET status='active' WHERE cashier_id=?`,[cashierId])
 
         await conn.commit();
 

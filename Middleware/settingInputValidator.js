@@ -1,23 +1,19 @@
 const { body, validationResult } = require('express-validator');
-const {escapeHtmlChar}=require('../HtmlCHars')
 
 
 const validator = [
     body('reminder')
         .trim()
-        .customSanitizer(escapeHtmlChar)
         .notEmpty()
         .withMessage('Reminder message  required!'),
 
     body('overdue')
         .trim()
-        .customSanitizer(escapeHtmlChar)
         .notEmpty()
         .withMessage('Overdue message  required!'),
 
     body('interest')
         .trim()
-        .customSanitizer(escapeHtmlChar)
         .notEmpty()
         .withMessage('Interest ratio required!')
         .bail()
@@ -26,7 +22,6 @@ const validator = [
 
     body('lockafter')
         .trim()
-        .customSanitizer(escapeHtmlChar)
         .notEmpty()
         .withMessage('Lock after  required!')
         .bail()
@@ -35,7 +30,6 @@ const validator = [
 
     body('graceperiod')
         .trim()
-        .customSanitizer(escapeHtmlChar)
         .notEmpty()
         .withMessage('Grace period  required!')
         .bail()
@@ -44,7 +38,6 @@ const validator = [
 
     body('agentreward')
         .trim()
-        .customSanitizer(escapeHtmlChar)
         .notEmpty()
         .withMessage('Agent reward required!')
         .bail()

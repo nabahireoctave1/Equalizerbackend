@@ -1,19 +1,16 @@
 
 const {body,validationResult}=require('express-validator')
-const {escapeHtmlChar}=require('../HtmlCHars')
 
 
 
 const ValidateAgentInfo= [
-   body('names').trim().notEmpty().withMessage('Names required!').bail()
-   .customSanitizer(escapeHtmlChar),
+   body('names').trim().notEmpty().withMessage('Names required!').bail(),
    body('phone').trim().notEmpty().withMessage('Phone number required!').bail()
    .isLength({min:10,max:10}).withMessage('Phone number must be 10 digits!').isNumeric()
    .withMessage('Phone number must be number!'),
    body('email').trim().notEmpty().withMessage('Email required!').bail().isEmail()
    .withMessage('Invalid email format').normalizeEmail(),
-   body('location').trim().notEmpty().withMessage('Location required!')
-   .customSanitizer(escapeHtmlChar),
+   body('location').trim().notEmpty().withMessage('Location required!'),
    (req,res,next)=>{
    
     const errors= validationResult(req)

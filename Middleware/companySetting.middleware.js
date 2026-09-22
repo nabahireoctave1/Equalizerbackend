@@ -1,5 +1,4 @@
 const {body,validationResult}=require('express-validator')
-const {escapeHtmlChar}=require('../HtmlCHars')
 
 
 
@@ -8,9 +7,9 @@ const validateInput= [
     body('setting').isObject(),
     body('setting.grace_period').trim().notEmpty().isInt({min:1}),
     body('setting.interest_percentage').trim().notEmpty().isNumeric().isLength({min:0}),
-     body("setting.overdue").notEmpty().customSanitizer(escapeHtmlChar),
+     body("setting.overdue").notEmpty(),
      body("setting.payment_frequency").notEmpty().isIn(["Daily", "Weekly", "Monthly"]),
-      body("setting.reminder").notEmpty().customSanitizer(escapeHtmlChar),
+      body("setting.reminder").notEmpty(),
       body('setting.report_generetion_time').notEmpty().matches(/^([01]\d|2[0-3]):([0-5]\d)$/),
     body('setting.officeId').optional({ nullable: true }).isNumeric().isLength({min:0}),
     body("officecharge").isArray(),

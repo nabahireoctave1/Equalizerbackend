@@ -49,13 +49,13 @@ StartWhattApp();
 io.use((socket, next) => {
   try {
     const token = socket.handshake.query.token;
-
     if (!token) {
       return next(new Error("Unauthorized"));
     }
 
     const user = jwt.verify(token, process.env.JWT_SEC);
     socket.user = user;
+
 
     next();
   } catch (err) {
@@ -68,11 +68,11 @@ const activeuser=new Set();
 
 io.on("connection", (socket) => {
 
-const {id,role,compId}= socket.user;
+const {userId,role,compId}= socket.user;
 HandlesendTo(socket);
 
 sendManualyNotification(io,socket);
-activeuser.add(id);
+activeuser.add(userId);
 console.log(activeuser.size,'online')
 getonlineuser(activeuser.size);
   if(role==='superadmin'){
@@ -83,12 +83,11 @@ getonlineuser(activeuser.size);
   }
   if(role==='subadmin'){
     socket.join(`admin_${compId}`)
-    socket.join(`private_admin_${id}`)
   }
 
   if(role==='cashier')
   {
-    socket.join(`cashier_${id}`)
+    socket.join(`cashier_${userId}`)
   }
   
 
@@ -96,7 +95,7 @@ getonlineuser(activeuser.size);
 
 
   socket.on("disconnect", () => {
-    activeuser.delete(id);
+    activeuser.delete(userId);
     getonlineuser(activeuser.size)
     console.log(activeuser.size,'online')
 
