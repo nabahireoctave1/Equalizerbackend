@@ -113,6 +113,7 @@ const HandleSaveClientnfo= async(req,res)=>{
 
          
    try{
+
    
     conn=await con.getConnection();
     await conn.beginTransaction();
@@ -138,10 +139,13 @@ const HandleSaveClientnfo= async(req,res)=>{
 
         
     if(clientId){
-       const [ExistingLoanData] =await conn.execute(`SELECT l.loan_id,l.client_id,l.client_name,l.totalpay,
-        l.amount_given,
-        ps.expected_amount,ps.paid_amount,ps.due_date,ps.status FROM loan l
-         INNER JOIN payment_schedule ps ON l.loan_id=ps.loan_id`);
+     const [ExistingLoanData] = await conn.execute(`
+    SELECT l.loan_id,l.client_id,l.client_name,l.totalpay,
+    l.amount_given,b.branch_id,b.branch_name,ps.expected_amount,ps.paid_amount,
+     ps.due_date, ps.status FROM loan l INNER JOIN branch b 
+    ON l.branch_id = b.branch_id INNER JOIN payment_schedule ps 
+    ON l.loan_id = ps.loan_id WHERE l.client_id = ?
+`, [clientId]);
 
         if(ExistingLoanData.length>0){
         const ClientLoanmapInfo={};
@@ -152,21 +156,18 @@ const HandleSaveClientnfo= async(req,res)=>{
                     LoanId:loan.loan_id,
                     clientId:loan.client_id,
                     clientname:loan.client_name,
-                    TotalAmountTopay:loan.totalpay,
+                    branch_name:loan.branch_name,
                     LoanAmount:loan.amount_given,
                     TotalExpected:0,
                     TotalPaid:0,
                     TotalUnpaid:0,
                     unpaidDays:0,
-                    TotalOverdueCount:0,
                     PartialPaymentCount:0,
-                    TotalPaidCount:0,
                     
                 }
 
             }
 
-            let UnpaidDays=0;
 
             
             const Loan=ClientLoanmapInfo[loan.loan_id];
@@ -176,17 +177,14 @@ const HandleSaveClientnfo= async(req,res)=>{
 
 
 
-            const due_date=new Date(loan.due_date);
-            const today=new Date();
-            if(loan.status==='overdue'&&due_date<today){
-               UnpaidDays=Math.floor((today-due_date)/(1000*60*60*24));
-            }
+           
+           
 
 
             Loan.TotalExpected+=expected;
             Loan.TotalPaid+=paid;
             Loan.TotalUnpaid+=unPaid;
-            Loan.unpaidDays+=UnpaidDays;
+           
 
 
 
@@ -196,10 +194,10 @@ const HandleSaveClientnfo= async(req,res)=>{
            if(loan.status?.toLowerCase()==='partial_paid'){
             Loan.PartialPaymentCount++;
            }
+            if(loan.status==='overdue'){
+               Loan.unpaidDays++;
+            }
        
-           if(loan.status?.toLowerCase()==='overdue'&&UnpaidDays>0){
-           Loan.TotalOverdueCount++;
-           }
                 
 
           })
@@ -207,7 +205,6 @@ const HandleSaveClientnfo= async(req,res)=>{
           let TotalExpectedTopay=0;
           let TotalAmountPaid=0;
           let TotalUnpaidLoanAmount=0;
-          const crossOverdueCount=0;
           let TotalLoan=0;
           let ClientName=null;
           const currentLoanInfo= Object.values(ClientLoanmapInfo);
@@ -239,7 +236,8 @@ const HandleSaveClientnfo= async(req,res)=>{
             );
         }
 
-        else{
+    else{
+     const closingDate= schedules[schedules.length-1].dueDate;
 await conn.execute(`
   INSERT INTO loan (
     loan_id,company_id,branch_id,client_id,client_name,national_id,totalpay,
