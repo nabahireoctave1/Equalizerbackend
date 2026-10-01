@@ -11,8 +11,9 @@ const validateSMSPackageInputs=require('../Middleware/purchaseSMS.validatation.m
 const ValidatechangedCompInfo= require('../Middleware/changeComp.info.middleware')
 const ValidatesCashierChange=require('../Middleware/validatecashier.changes.middleware')
 const validateProfileInformation= require('../Middleware/updateProfile.middleware')
-const validateInfo= require('../Middleware/validate.ClientInfo')
+const validateInfo= require('../Middleware/validate.LoanInfo')
 const validatePayments= require('../Middleware/Paying.validation.middleware')
+ValidateBorrowerInfo=require('../Middleware/NewBorrower.middware')
 const upload=require('../Middleware/upload');
 const Upload= require('../Middleware/collateral.upload')
 const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
@@ -45,7 +46,12 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
  ReturnCurrentCompany
  } = require('../MainController/Controllers')
 
- const { FindCurrentBranchBorrowers, HandleSaveClientnfo, HandlePay} =require('../cashier_Controllers/cashier.controllers')
+ const { FindCurrentBranchBorrowers,HandleSaveLoaninfo,
+     HandlePay,
+     HandleLoanConfirm,
+     ReturnCurrentBranchLoans,
+     FetchBorrowerInformation,
+     HandleSaveBorrowerInfo} =require('../cashier_Controllers/cashier.controllers')
 
 
 const { VerifyToken,VerifyRole } = require('../Middleware/VerifyToken_Role')
@@ -97,8 +103,11 @@ upload.single('profile_photo'),validateProfileInformation,UpdateProfile)
 router.get('/profile-information',VerifyToken,VerifyRole('subadmin'),FetchProfileInfomation)
 
 router.get('/branch-borrowers',VerifyToken,VerifyRole('cashier'),FindCurrentBranchBorrowers)
-router.post('/save_client_info',VerifyToken,VerifyRole('cashier'),Upload.single('secPicture'),validateInfo,HandleSaveClientnfo)
+router.post('/Save-Loan-info',VerifyToken,VerifyRole('cashier'),Upload.single('secPicture'),validateInfo,HandleSaveLoaninfo)
 router.post('/PayLoan',VerifyToken,VerifyRole('cashier'),validatePayments,HandlePay)
-
+router.post('/loan-confirm',VerifyToken,VerifyRole('cashier'),Upload.single('secPicture'),HandleLoanConfirm)
+router.get('/branch-current-loans',VerifyToken,VerifyRole('cashier'),ReturnCurrentBranchLoans)
+router.get('/fetchBorrowers',VerifyToken,VerifyRole('cashier'),FetchBorrowerInformation)
+router.post('/saveBorrower-info',VerifyToken,VerifyRole('cashier'),ValidateBorrowerInfo,HandleSaveBorrowerInfo)
 
 module.exports=router

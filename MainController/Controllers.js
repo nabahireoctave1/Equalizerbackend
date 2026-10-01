@@ -818,12 +818,12 @@ INNER JOIN branch b
     SELECT b.branch_name,b.branch_id, l.client_id,l.totalpay,l.fees,
      l.national_id,l.guarantor_name, l.guarantor_address,l.guarantor_contacts,l.approved,
       l.client_name,l.amount_given,l.status,l.pay_frequency,
-      l.security_name as security FROM branch b LEFT JOIN loan l ON b.branch_id=l.branch_id
-        WHERE l.company_id=?`,[compId])
+      l.security_name as security FROM branch b LEFT JOIN loan 
+      l ON b.branch_id=l.branch_id WHERE l.company_id=?`,[compId])
          if(result.length!==0){
         result.forEach((row)=>{
             const amountGiven= Number(row?.amount_given||0)
-            
+              console.log(amountGiven)
             if(!branchsMap[row.branch_id]){
                 branchsMap[row.branch_id]={
                     branchId:row.branch_id,
@@ -831,10 +831,10 @@ INNER JOIN branch b
                     loanscount:0,
                     total_loaned:0,
                     totalunpaid:0,
-
                     loans:[]
 
                 }
+
 
                 if(row.status&&row.status.toLowerCase()==='unpaid'){
                 branchsMap[row.branch_id].totalunpaid+=amountGiven;
@@ -848,16 +848,12 @@ INNER JOIN branch b
                         guarantorname:row.guarantor_name,
                         guarantoraddress:row.guarantor_address,
                         guarantorcontacts:row.guarantor_contacts,
-                        received_Amount:row.recieved_amount,
-                        unpaidwindow:row.unpaid_days,
-                        closingDate:row.closing_date,
                         clientnationalID:row.national_id,
                         totalpay:row.totalpay,
                         fees:row.fees,
                         payment_frequency:row.pay_frequency,
                         security:row.security,
                         approved_by:row.approved
-
                         
                     });
 
