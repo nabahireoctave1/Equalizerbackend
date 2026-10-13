@@ -13,45 +13,25 @@ const ValidatesCashierChange=require('../Middleware/validatecashier.changes.midd
 const validateProfileInformation= require('../Middleware/updateProfile.middleware')
 const validateInfo= require('../Middleware/validate.LoanInfo')
 const validatePayments= require('../Middleware/Paying.validation.middleware')
-ValidateBorrowerInfo=require('../Middleware/NewBorrower.middware')
+const ValidateBorrowerInfo=require('../Middleware/NewBorrower.middware')
+const ValidateCashierProfileInformation=require('../Middleware/cashierProfileUpdate.middleware')
+const ValidateNewLoanRequest= require('../Middleware/NewLoanRequest.middware')
 const upload=require('../Middleware/upload');
 const Upload= require('../Middleware/collateral.upload')
 const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
- ReturnCurrentSetting,GetCompanyAdmin,
- HandleReturnAdminList,
- HandlesaveAgent,
- LogAgent,CompanyCurrentSetting,
- HandleSaveCompanySettings,updateofficecharge,
- ReturnCompanyBranch,AddCashier,
- FetchCashier,
- FetchRepaymentInfo,
- FetchCUrrentLoans,
- FetchAllCompanyClient,
- SmsTransactionLog,
- currentSMS,
- PurchaseSMS,
- ChangeCompanyInfo,
- returncompanyCurrentInfo,
- changeCashierInfo,
- DeleteCashier,
- FetchCurrentcashierInformation,
- SuspendCashier,
- ReactivateCashier,
- FetchFlagedBorrowers,
- RejectRequest,
- RequestApproval,
- UpdateProfile,
- FetchProfileInfomation,
- ReturnCompanyLoans,
- ReturnCurrentCompany
+ ReturnCurrentSetting,GetCompanyAdmin,HandleReturnAdminList,HandlesaveAgent,LogAgent,CompanyCurrentSetting,
+ HandleSaveCompanySettings,updateofficecharge,ReturnCompanyBranch,AddCashier,FetchCashier,FetchRepaymentInfo,FetchCUrrentLoans,
+ FetchAllCompanyClient,SmsTransactionLog,currentSMS,PurchaseSMS, ChangeCompanyInfo,returncompanyCurrentInfo,changeCashierInfo,
+ DeleteCashier,FetchCurrentcashierInformation,SuspendCashier,ReactivateCashier,FetchFlagedBorrowers,RejectRequest,
+ RequestApproval,UpdateProfile,FetchProfileInfomation,ReturnCompanyLoans,ReturnCurrentCompany
  } = require('../MainController/Controllers')
 
- const { FindCurrentBranchBorrowers,HandleSaveLoaninfo,
-     HandlePay,
-     HandleLoanConfirm,
-     ReturnCurrentBranchLoans,
-     FetchBorrowerInformation,
-     HandleSaveBorrowerInfo} =require('../cashier_Controllers/cashier.controllers')
+ const { FindCurrentBranchBorrowers,HandleSaveLoaninfo,HandlePay,HandleLoanConfirm,ReturnCurrentBranchLoans,
+     FetchBorrowerInformation,HandleSaveBorrowerInfo,FetchRequestedPayments,FetchFieldPayment,FetchUnpaidHistory,
+     HandleReturnCurrentCashierProfile, CashierProfileUpdate,HandleRequestNewLoan,GetLoanHistory,
+     FetchCurrentDemand,
+     FetChOverLoanedHistory} 
+     =require('../cashier_Controllers/cashier.controllers')
 
 
 const { VerifyToken,VerifyRole } = require('../Middleware/VerifyToken_Role')
@@ -109,5 +89,19 @@ router.post('/loan-confirm',VerifyToken,VerifyRole('cashier'),Upload.single('sec
 router.get('/branch-current-loans',VerifyToken,VerifyRole('cashier'),ReturnCurrentBranchLoans)
 router.get('/fetchBorrowers',VerifyToken,VerifyRole('cashier'),FetchBorrowerInformation)
 router.post('/saveBorrower-info',VerifyToken,VerifyRole('cashier'),ValidateBorrowerInfo,HandleSaveBorrowerInfo)
+router.get('/Today-payments',VerifyToken,VerifyRole('cashier'),FetchRequestedPayments);
+router.get('/fieldPayment',VerifyToken,VerifyRole('cashier'),FetchFieldPayment)
+router.get('/unpaid-history',VerifyToken,VerifyRole('cashier'),FetchUnpaidHistory)
+router.get('/profileInfo',VerifyToken,VerifyRole('cashier'),HandleReturnCurrentCashierProfile)
+router.put('/cashier-profile-update',VerifyToken,VerifyRole('cashier'),upload.single('profile_photo'),ValidateCashierProfileInformation,CashierProfileUpdate)
+router.get('/current-Demand',VerifyToken,VerifyRole('cashier'),FetchCurrentDemand)
+router.get('/Current-OverLoaned/History',VerifyToken,VerifyRole('cashier'),FetChOverLoanedHistory)
+ 
+
+router.post('/newLoan-request',ValidateNewLoanRequest,HandleRequestNewLoan);
+router.post('/Loan-History',GetLoanHistory);
+
+
+
 
 module.exports=router

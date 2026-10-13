@@ -8,7 +8,7 @@ user:process.env.DBUSER,
 password:process.env.DBPASS,
 database:process.env.DBNAME,
 connectionLimit:20,
-queueLimit:0
+queueLimit:0,
 
 
 

@@ -1060,7 +1060,6 @@ console.log(req.body);
         UPDATE cashier SET branch_id=?,cashier_name=?
         ,cashier_contact=?,cashier_email=? ,cashier_location=?
          WHERE cashier_id=?`
-      
        const [verifyPhone]= await conn.execute(`SELECT EXISTS (
             SELECT 1 FROM cashier WHERE cashier_contact=? AND cashier_id != ?
             ) as isexist`,[phoneno,cashierId])

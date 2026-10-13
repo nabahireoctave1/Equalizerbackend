@@ -6,7 +6,8 @@ const validatePayments= [
   
     body('client_name').notEmpty().withMessage('client.client_name_required').trim(),
     body('paymentAmount').notEmpty().withMessage('client.paymentamount_required').bail()
-    .isNumeric().withMessage('client.amount_is_numeric').isLength({min:0}).withMessage('client.amountMax_amountIs')
+    .isNumeric().withMessage('client.amount_is_numeric').isFloat({min:1}).withMessage('client.amount_Length')
+    .isLength({min:0}).withMessage('client.amountMax_amountIs')
   ,(req,res,next)=>{
 
     const errors= validationResult(req);
