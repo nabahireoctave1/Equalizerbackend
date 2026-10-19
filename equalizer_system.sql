@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 03, 2026 at 08:45 AM
+-- Generation Time: Oct 19, 2026 at 07:04 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -124,15 +124,18 @@ CREATE TABLE `cashier` (
   `cashier_contact` varchar(255) NOT NULL,
   `cashier_email` varchar(255) DEFAULT NULL,
   `cashier_location` varchar(255) DEFAULT NULL,
-  `status` enum('active','suspended') DEFAULT 'active'
+  `status` enum('active','suspended') DEFAULT 'active',
+  `created_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated_at` datetime(6) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `cashier`
 --
 
-INSERT INTO `cashier` (`id`, `cashier_id`, `company_id`, `branch_id`, `cashier_name`, `cashier_contact`, `cashier_email`, `cashier_location`, `status`) VALUES
-(1, '8503289', 108012, 6574658, 'nabahireoctave', '0798124546', 'nabahireoctave@gmail.com', 'rwanda', 'active');
+INSERT INTO `cashier` (`id`, `cashier_id`, `company_id`, `branch_id`, `cashier_name`, `cashier_contact`, `cashier_email`, `cashier_location`, `status`, `created_at`, `updated_at`) VALUES
+(1, '8503289', 108012, 6574658, 'Jonathan David', '0798124546', 'jonathan015@gmail.com', 'Nyagatare', 'active', '2026-10-08 13:54:21.407153', '2026-10-09 14:00:06.649000'),
+(2, '4823394', 108012, 890765, 'Ishimwe Precious', '0732789551', 'preciousWebale@gmail.com', 'Uganda', 'active', '2026-10-16 08:03:36.760460', NULL);
 
 -- --------------------------------------------------------
 
@@ -156,6 +159,7 @@ CREATE TABLE `cashier_notification` (
 --
 
 CREATE TABLE `client` (
+  `id` int(10) UNSIGNED NOT NULL,
   `client_id` bigint(20) NOT NULL,
   `national_id` varchar(255) NOT NULL,
   `company_id` bigint(20) NOT NULL,
@@ -174,14 +178,18 @@ CREATE TABLE `client` (
 -- Dumping data for table `client`
 --
 
-INSERT INTO `client` (`client_id`, `national_id`, `company_id`, `branch_id`, `client_name`, `phone`, `client_address`, `bussiness_type`, `bussiness_location`, `client_bussinessName`, `created_at`, `updated_at`) VALUES
-(213644, '1234567891012341', 108012, 6574658, 'Mugabo edison', '0798124549', 'Hoima', 'sole properiator ship', 'Kampala', 'coffeshop', '2026-10-01 18:42:43', NULL),
-(481944, '4490001888773245', 108012, 6574658, 'Tumusime Eddy', '0787345620', 'Hoima', 'sole properiator ship', 'Ryatonde', 'restuarant', '2026-10-01 18:56:11', NULL),
-(781230, '1234567891012346', 108012, 6574658, 'nabahire octave', '0798124544', 'Hoima', 'sole properiator ship', 'Kampala', 'coffeshop', '2026-10-01 18:35:02', NULL),
-(786467, '1234567886778987', 108012, 6574658, 'jane hanet', '0798724546', 'Hoima', 'Limited Liablities', 'Entebe', 'Equalizer company', '2026-07-24 09:59:35', '2026-06-25 12:34:39'),
-(805989, '1200523673636353', 108012, 6574658, 'ishimwe precious', '0734567845', 'mubende', 'sole properiator ship', 'mubende', 'IT', '2026-10-01 18:48:57', NULL),
-(923392, '9000888888123456', 108012, 6574658, 'bugingo blaise', '0798124540', 'kampala', 'Limited liabilities', 'Kampala', 'bubber', '2026-10-01 18:46:44', NULL),
-(7873765, '1234567891012345', 108012, 6574658, 'Kampire Joy', '0783734567', 'Bugesera', 'Sole properiotor ship', 'kampala', 'coffeeshop', '2026-07-27 10:20:21', '2026-07-28 09:10:59');
+INSERT INTO `client` (`id`, `client_id`, `national_id`, `company_id`, `branch_id`, `client_name`, `phone`, `client_address`, `bussiness_type`, `bussiness_location`, `client_bussinessName`, `created_at`, `updated_at`) VALUES
+(1, 805989, '1200523673636353', 108012, 6574658, 'ishimwe precious', '0734567845', 'mubende', 'sole properiator ship', 'mubende', 'IT', '2026-10-01 18:48:57', NULL),
+(2, 786467, '1234567886778987', 108012, 6574658, 'jane hanet', '0798724546', 'Hoima', 'Limited Liablities', 'Entebe', 'Equalizer company', '2026-07-24 09:59:35', '2026-06-25 12:34:39'),
+(3, 213644, '1234567891012341', 108012, 6574658, 'Mugabo edison', '0798124549', 'Hoima', 'sole properiator ship', 'Kampala', 'coffeshop', '2026-10-01 18:42:43', NULL),
+(4, 7873765, '1234567891012345', 108012, 6574658, 'Kampire Joy', '0783734567', 'Bugesera', 'Sole properiotor ship', 'kampala', 'coffeeshop', '2026-07-27 10:20:21', '2026-07-28 09:10:59'),
+(5, 781230, '1234567891012346', 108012, 6574658, 'nabahire octave', '0798124544', 'Hoima', 'sole properiator ship', 'Kampala', 'coffeshop', '2026-10-01 18:35:02', NULL),
+(6, 761556, '1234567891102346', 108012, 6574658, 'umutesi jane', '0798763554', 'kigali', 'Limited liabilities', 'Rubavu', 'Fishing', '2026-10-03 10:49:40', NULL),
+(7, 481944, '4490001888773245', 108012, 6574658, 'Tumusime Eddy', '0787345620', 'Hoima', 'sole properiator ship', 'Ryatonde', 'restuarant', '2026-10-01 18:56:11', NULL),
+(8, 923392, '9000888888123456', 108012, 6574658, 'bugingo blaise', '0798124540', 'kampala', 'Limited liabilities', 'Kampala', 'bubber', '2026-10-01 18:46:44', NULL),
+(9, 712068, '1234567886778987', 108012, 890765, 'jane hanet', '0798724546', 'Bugesera', 'sole properiator ship', 'rwanda', 'coffeshop', '2026-10-16 10:48:24', NULL),
+(10, 997121, '1234567891012345', 108012, 890765, 'kampire joy', '0783734567', 'Rwanda', 'Limited liabilities', 'Bugesera', 'IT company', '2026-10-16 10:52:28', NULL),
+(11, 639060, '1234567891012346', 108012, 890765, 'nabahire octave', '0782761859', 'Hoima', 'sole properiator ship', 'kampala', 'restuarant', '2026-10-16 10:54:02', NULL);
 
 -- --------------------------------------------------------
 
@@ -322,12 +330,28 @@ CREATE TABLE `demand` (
   `client_name` varchar(255) NOT NULL,
   `contact` varchar(255) NOT NULL,
   `amount` decimal(30,2) NOT NULL,
-  `business` varchar(255) DEFAULT 'unemployed',
+  `businesstype` varchar(255) DEFAULT NULL,
+  `businessName` varchar(255) NOT NULL,
+  `businesslocation` varchar(255) NOT NULL,
   `loan_taken` bigint(20) UNSIGNED NOT NULL,
-  `location` varchar(255) NOT NULL,
-  `status` enum('pending','approved','rejected') DEFAULT 'pending',
-  `created_at` date NOT NULL DEFAULT curdate()
+  `client_location` varchar(255) NOT NULL,
+  `status` enum('approved','pending','rejected','confirmed') DEFAULT 'pending',
+  `guarantor` varchar(255) NOT NULL,
+  `guarantor_contact` varchar(255) NOT NULL,
+  `guarantor_address` varchar(255) NOT NULL,
+  `created_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `demand`
+--
+
+INSERT INTO `demand` (`id`, `company_id`, `branch_id`, `client_id`, `client_name`, `contact`, `amount`, `businesstype`, `businessName`, `businesslocation`, `loan_taken`, `client_location`, `status`, `guarantor`, `guarantor_contact`, `guarantor_address`, `created_at`) VALUES
+(1, 108012, 6574658, 805989, 'ishimwe precious', '0734567845', 300000.00, 'sole properiator ship', 'IT', 'mubende', 0, 'mubende', 'pending', 'kampire joy', '0798724546', 'nyagatare', '2026-10-11 11:10:12.307156'),
+(2, 108012, 6574658, 213644, 'Mugabo edison', '0798124549', 100000.00, 'sole properiator ship', 'coffeshop', 'Kampala', 1, 'Hoima', 'pending', 'jonathan davis', '0798724546', 'nyagatare', '2026-10-11 11:18:54.181849'),
+(3, 108012, 6574658, 781230, 'nabahire octave', '0798124544', 5000000.00, 'sole properiator ship', 'coffeshop', 'Kampala', 0, 'Hoima', 'pending', 'jonathan davis', '0798724546', 'nyagatare', '2026-10-11 11:21:03.253287'),
+(4, 108012, 6574658, 761556, 'umutesi jane', '0798763554', 50000.00, 'Limited liabilities', 'Fishing', 'Rubavu', 0, 'kigali', 'pending', 'jonathan davis', '0798724546', 'nyagatare', '2026-10-11 11:22:58.089473'),
+(6, 108012, 6574658, 786467, 'jane hanet', '0798724546', 9000000.00, 'Limited Liablities', 'Equalizer company', 'Entebe', 0, 'Hoima', 'pending', 'jonathan davis', '0798724546', 'Kampala', '2026-10-11 12:18:39.496905');
 
 -- --------------------------------------------------------
 
@@ -342,22 +366,6 @@ CREATE TABLE `expense` (
   `expenses_amount` decimal(30,2) NOT NULL,
   `description` varchar(255) NOT NULL,
   `created_at` date NOT NULL DEFAULT curdate()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `field`
---
-
-CREATE TABLE `field` (
-  `id` bigint(20) UNSIGNED NOT NULL,
-  `company_id` bigint(20) NOT NULL,
-  `branch_id` bigint(20) NOT NULL,
-  `field_officer_id` bigint(20) NOT NULL,
-  `client_name` bigint(20) UNSIGNED NOT NULL,
-  `client_payment` bigint(20) DEFAULT NULL,
-  `created_date` date NOT NULL DEFAULT curdate()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -402,6 +410,7 @@ INSERT INTO `linktoken` (`userid`, `Token`, `isused`, `expiration`, `created_at`
 (619587, '85753184550642fdd855624620c74a817b0376347c5d698f97c88ba7a89b3a2d', 1, '2026-06-27 08:40:26.000000', '2026-06-27 06:25:26.069000'),
 (624780, '76dd1ba520b3aa09520d1557edcbb2f597e662086db9e035938fa1864811bc6a', 1, '2026-06-27 09:01:03.000000', '2026-06-27 06:46:03.134047'),
 (874625, '443b533d6caa88042df07912b517baf1b067a71212cf09b2caa30276219d7605', 0, '2026-06-27 08:54:23.000000', '2026-06-27 06:39:23.921318'),
+(4823394, '03b486c2b6e5b35b5bc910b7847e98347ebe1b976db809768daddb93393a37c8', 1, '2026-10-16 10:18:36.000000', '2026-10-16 08:03:36.837088'),
 (8503289, '49dfd5c04d0f0c21ed6aa655170d967badf6db3fc6463fbb08c8036a150b9329', 1, '2026-09-17 10:13:27.000000', '2026-09-17 07:58:27.652259');
 
 -- --------------------------------------------------------
@@ -446,10 +455,9 @@ CREATE TABLE `loan` (
 --
 
 INSERT INTO `loan` (`id`, `loan_id`, `company_id`, `branch_id`, `client_id`, `client_name`, `national_id`, `client_address`, `client_contact`, `bussiness_location`, `bussiness_Type`, `client_bussinessName`, `guarantor_name`, `guarantor_address`, `guarantor_contacts`, `amount_given`, `Balance`, `DailyInstallment`, `amountAfterOfficeCharge`, `chargeAmount`, `totalpay`, `status`, `fees`, `loan_closingDate`, `pay_frequency`, `security_name`, `sec_pic`, `approved`) VALUES
-(1, 'LN6544', 108012, 6574658, 7873765, 'Kampire Joy', '1234567891012345', 'Bugesera', '0783734567', 'kampala', 'Sole properiotor ship', 'coffeeshop', 'jane Hanet', 'Uganda Kampala', '0783734567', 80000.00, 80000.00, 0.00, 76000.00, 4000.00, 80000.00, 'active', 0, '2026-10-02', 'daily', 'Pc', NULL, 'musimenta annet'),
-(2, 'LN4770', 108012, 6574658, 786467, 'jane hanet', '1234567886778987', 'Hoima', '0798724546', 'Entebe', 'Limited Liablities', 'Equalizer company', 'jonathan david', 'Hoima', '0787345640', 70000.00, 70000.00, 0.00, 66500.00, 3500.00, 70000.00, 'active', 0, '2026-09-30', 'daily', 'Radio', NULL, 'musimenta annet'),
-(3, 'LN3648', 108012, 6574658, 786467, 'jane hanet', '1234567886778987', 'Hoima', '0798724546', 'Entebe', 'Limited Liablities', 'Equalizer company', 'jane Hanet', 'Uganda Kampala', '0783734567', 100000.00, 100000.00, 0.00, 100000.00, 0.00, 100000.00, 'active', 0, '2026-10-03', 'daily', 'Land', NULL, 'musimenta annet'),
-(4, 'LN5849', 108012, 6574658, 7873765, 'Kampire Joy', '1234567891012345', 'Bugesera', '0783734567', 'kampala', 'Sole properiotor ship', 'coffeeshop', 'jonathan david', 'Kigali Rwanda', '0798724546', 2000000.00, 2000000.00, 0.00, 2000000.00, 0.00, 2000000.00, 'active', 0, '2026-11-07', 'daily', 'Land desc', NULL, 'musimenta annet');
+(1, 'LN1388', 108012, 6574658, 213644, 'Mugabo edison', '1234567891012341', 'Hoima', '0798124549', 'Kampala', 'sole properiator ship', 'coffeshop', 'Nabahire octave', 'Mbarara', '0798724546', 60000.00, 48000.00, 0.00, 57000.00, 3000.00, 60000.00, 'paid', 0, '2026-10-06', 'daily', 'Land', NULL, 'kemirembe peace'),
+(2, 'LN3796', 108012, 6574658, 7873765, 'Kampire Joy', '1234567891012345', 'Bugesera', '0783734567', 'kampala', 'Sole properiotor ship', 'coffeeshop', 'Manzi eddy', 'Hoima', '0787345640', 80000.00, 20000.00, 0.00, 76000.00, 4000.00, 80000.00, 'active', 0, '2026-10-07', 'daily', 'Computer', NULL, 'kemirembe peace'),
+(3, 'LN5338', 108012, 6574658, 481944, 'Tumusime Eddy', '4490001888773245', 'Hoima', '0787345620', 'Ryatonde', 'sole properiator ship', 'restuarant', 'Nyandwi james', 'Kampala', '0798724546', 500000.00, 468000.00, 0.00, 500000.00, 0.00, 500000.00, 'paid', 0, '2026-10-28', 'daily', 'Hotel Park', NULL, 'kemirembe peace');
 
 -- --------------------------------------------------------
 
@@ -481,17 +489,6 @@ CREATE TABLE `notification` (
   `read_at` datetime DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Dumping data for table `notification`
---
-
-INSERT INTO `notification` (`notification_id`, `company_id`, `notification`, `status`, `read_at`, `created_at`) VALUES
-(1, 108012, 'hello precoiou', 'unread', NULL, '2026-09-07 11:48:12'),
-(2, 284573, 'hello precoiou', 'unread', NULL, '2026-09-07 11:48:58'),
-(3, 284573, 'hello precoiou', 'unread', NULL, '2026-09-07 11:50:23'),
-(4, 284573, 'hello precoiou', 'unread', NULL, '2026-09-07 11:50:25'),
-(5, 284573, 'hello precoiou', 'unread', NULL, '2026-09-07 11:50:30');
 
 -- --------------------------------------------------------
 
@@ -552,65 +549,47 @@ CREATE TABLE `payment_schedule` (
   `due_date` date DEFAULT NULL,
   `expected_amount` decimal(30,2) NOT NULL,
   `paid_amount` decimal(30,2) NOT NULL,
-  `status` enum('pending','partial_paid','paid','overdue','advance') DEFAULT 'pending'
+  `status` enum('pending','partial_paid','paid','overdue','advance') DEFAULT 'pending',
+  `status_History` enum('partial_paid','paid','advance','overdue','pending') DEFAULT 'pending'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `payment_schedule`
 --
 
-INSERT INTO `payment_schedule` (`id`, `loan_id`, `due_date`, `expected_amount`, `paid_amount`, `status`) VALUES
-(1, 'LN6544', '2026-09-29', 20000.00, 0.00, 'pending'),
-(2, 'LN6544', '2026-09-30', 20000.00, 0.00, 'pending'),
-(3, 'LN6544', '2026-10-01', 20000.00, 0.00, 'pending'),
-(4, 'LN6544', '2026-10-02', 20000.00, 0.00, 'pending'),
-(5, 'LN4770', '2026-09-29', 60000.00, 0.00, 'pending'),
-(6, 'LN4770', '2026-09-30', 10000.00, 0.00, 'pending'),
-(7, 'LN3648', '2026-09-29', 20000.00, 0.00, 'pending'),
-(8, 'LN3648', '2026-09-30', 20000.00, 0.00, 'pending'),
-(9, 'LN3648', '2026-10-01', 20000.00, 0.00, 'pending'),
-(10, 'LN3648', '2026-10-02', 20000.00, 0.00, 'pending'),
-(11, 'LN3648', '2026-10-03', 20000.00, 0.00, 'pending'),
-(12, 'LN5849', '2026-09-29', 50000.00, 0.00, 'pending'),
-(13, 'LN5849', '2026-09-30', 50000.00, 0.00, 'pending'),
-(14, 'LN5849', '2026-10-01', 50000.00, 0.00, 'pending'),
-(15, 'LN5849', '2026-10-02', 50000.00, 8000.00, 'partial_paid'),
-(16, 'LN5849', '2026-10-03', 50000.00, 0.00, 'pending'),
-(17, 'LN5849', '2026-10-04', 50000.00, 0.00, 'pending'),
-(18, 'LN5849', '2026-10-05', 50000.00, 0.00, 'pending'),
-(19, 'LN5849', '2026-10-06', 50000.00, 0.00, 'pending'),
-(20, 'LN5849', '2026-10-07', 50000.00, 0.00, 'pending'),
-(21, 'LN5849', '2026-10-08', 50000.00, 0.00, 'pending'),
-(22, 'LN5849', '2026-10-09', 50000.00, 0.00, 'pending'),
-(23, 'LN5849', '2026-10-10', 50000.00, 0.00, 'pending'),
-(24, 'LN5849', '2026-10-11', 50000.00, 0.00, 'pending'),
-(25, 'LN5849', '2026-10-12', 50000.00, 0.00, 'pending'),
-(26, 'LN5849', '2026-10-13', 50000.00, 0.00, 'pending'),
-(27, 'LN5849', '2026-10-14', 50000.00, 0.00, 'pending'),
-(28, 'LN5849', '2026-10-15', 50000.00, 0.00, 'pending'),
-(29, 'LN5849', '2026-10-16', 50000.00, 0.00, 'pending'),
-(30, 'LN5849', '2026-10-17', 50000.00, 0.00, 'pending'),
-(31, 'LN5849', '2026-10-18', 50000.00, 0.00, 'pending'),
-(32, 'LN5849', '2026-10-19', 50000.00, 0.00, 'pending'),
-(33, 'LN5849', '2026-10-20', 50000.00, 0.00, 'pending'),
-(34, 'LN5849', '2026-10-21', 50000.00, 0.00, 'pending'),
-(35, 'LN5849', '2026-10-22', 50000.00, 0.00, 'pending'),
-(36, 'LN5849', '2026-10-23', 50000.00, 0.00, 'pending'),
-(37, 'LN5849', '2026-10-24', 50000.00, 0.00, 'pending'),
-(38, 'LN5849', '2026-10-25', 50000.00, 0.00, 'pending'),
-(39, 'LN5849', '2026-10-26', 50000.00, 0.00, 'pending'),
-(40, 'LN5849', '2026-10-27', 50000.00, 0.00, 'pending'),
-(41, 'LN5849', '2026-10-28', 50000.00, 0.00, 'pending'),
-(42, 'LN5849', '2026-10-29', 50000.00, 0.00, 'pending'),
-(43, 'LN5849', '2026-10-30', 50000.00, 0.00, 'pending'),
-(44, 'LN5849', '2026-10-31', 50000.00, 0.00, 'pending'),
-(45, 'LN5849', '2026-11-01', 50000.00, 0.00, 'pending'),
-(46, 'LN5849', '2026-11-02', 50000.00, 0.00, 'pending'),
-(47, 'LN5849', '2026-11-03', 50000.00, 0.00, 'pending'),
-(48, 'LN5849', '2026-11-04', 50000.00, 0.00, 'pending'),
-(49, 'LN5849', '2026-11-05', 50000.00, 0.00, 'pending'),
-(50, 'LN5849', '2026-11-06', 50000.00, 0.00, 'pending'),
-(51, 'LN5849', '2026-11-07', 50000.00, 0.00, 'pending');
+INSERT INTO `payment_schedule` (`id`, `loan_id`, `due_date`, `expected_amount`, `paid_amount`, `status`, `status_History`) VALUES
+(1, 'LN1388', '2026-10-04', 20000.00, 12000.00, 'partial_paid', 'partial_paid'),
+(2, 'LN1388', '2026-10-05', 20000.00, 0.00, 'pending', 'pending'),
+(3, 'LN1388', '2026-10-06', 20000.00, 0.00, 'pending', 'pending'),
+(4, 'LN3796', '2026-10-04', 20000.00, 10000.00, 'advance', 'pending'),
+(5, 'LN3796', '2026-10-05', 20000.00, 0.00, 'pending', 'pending'),
+(6, 'LN3796', '2026-10-06', 20000.00, 0.00, 'pending', 'pending'),
+(7, 'LN3796', '2026-10-07', 20000.00, 0.00, 'pending', 'pending'),
+(8, 'LN5338', '2026-10-04', 20000.00, 0.00, 'pending', 'pending'),
+(9, 'LN5338', '2026-10-05', 20000.00, 12000.00, 'partial_paid', 'partial_paid'),
+(10, 'LN5338', '2026-10-06', 20000.00, 0.00, 'pending', 'pending'),
+(11, 'LN5338', '2026-10-07', 20000.00, 0.00, 'pending', 'pending'),
+(12, 'LN5338', '2026-10-08', 20000.00, 0.00, 'pending', 'pending'),
+(13, 'LN5338', '2026-10-09', 20000.00, 0.00, 'pending', 'pending'),
+(14, 'LN5338', '2026-10-10', 20000.00, 0.00, 'pending', 'pending'),
+(15, 'LN5338', '2026-10-11', 20000.00, 0.00, 'pending', 'pending'),
+(16, 'LN5338', '2026-10-12', 20000.00, 0.00, 'pending', 'pending'),
+(17, 'LN5338', '2026-10-13', 20000.00, 0.00, 'pending', 'pending'),
+(18, 'LN5338', '2026-10-14', 20000.00, 0.00, 'pending', 'pending'),
+(19, 'LN5338', '2026-10-15', 20000.00, 0.00, 'pending', 'pending'),
+(20, 'LN5338', '2026-10-16', 20000.00, 0.00, 'pending', 'pending'),
+(21, 'LN5338', '2026-10-17', 20000.00, 0.00, 'pending', 'pending'),
+(22, 'LN5338', '2026-10-18', 20000.00, 0.00, 'pending', 'pending'),
+(23, 'LN5338', '2026-10-19', 20000.00, 0.00, 'pending', 'pending'),
+(24, 'LN5338', '2026-10-20', 20000.00, 0.00, 'pending', 'pending'),
+(25, 'LN5338', '2026-10-21', 20000.00, 0.00, 'pending', 'pending'),
+(26, 'LN5338', '2026-10-22', 20000.00, 0.00, 'pending', 'pending'),
+(27, 'LN5338', '2026-10-23', 20000.00, 0.00, 'pending', 'pending'),
+(28, 'LN5338', '2026-10-24', 20000.00, 0.00, 'pending', 'pending'),
+(29, 'LN5338', '2026-10-25', 20000.00, 0.00, 'pending', 'pending'),
+(30, 'LN5338', '2026-10-26', 20000.00, 0.00, 'pending', 'pending'),
+(31, 'LN5338', '2026-10-27', 20000.00, 0.00, 'pending', 'pending'),
+(32, 'LN5338', '2026-10-28', 20000.00, 0.00, 'pending', 'pending');
 
 -- --------------------------------------------------------
 
@@ -625,11 +604,24 @@ CREATE TABLE `repayment` (
   `branch_id` bigint(20) DEFAULT NULL,
   `client_id` bigint(20) DEFAULT NULL,
   `client_name` varchar(255) NOT NULL,
-  `client_amount` varchar(255) NOT NULL,
+  `client_amount` decimal(65,2) NOT NULL DEFAULT 0.00,
   `date` datetime DEFAULT current_timestamp(),
-  `status` enum('done','failed') DEFAULT 'done',
+  `status` enum('done') DEFAULT 'done',
+  `payment_status` enum('partial_paid','paid','advance') DEFAULT NULL,
+  `payment_field` enum('office','field') DEFAULT NULL,
   `signed_by` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `repayment`
+--
+
+INSERT INTO `repayment` (`id`, `loan_id`, `company_id`, `branch_id`, `client_id`, `client_name`, `client_amount`, `date`, `status`, `payment_status`, `payment_field`, `signed_by`) VALUES
+(3, 'LN1388', 108012, 6574658, 213644, 'Mugabo edison', 12000.00, '2026-10-03 09:59:37', 'done', 'partial_paid', 'field', 'nabahireoctave'),
+(4, 'LN3796', 108012, 6574658, 7873765, 'Kampire Joy', 30000.00, '2026-10-03 10:26:23', 'done', 'paid', 'office', 'nabahireoctave'),
+(5, 'LN3796', 108012, 6574658, 7873765, 'Kampire Joy', 30000.00, '2026-10-03 10:30:26', 'done', 'advance', 'office', 'nabahireoctave'),
+(6, 'LN5338', 108012, 6574658, 481944, 'Tumusime Eddy', 20000.00, '2026-10-03 10:46:53', 'done', 'advance', 'field', 'nabahireoctave'),
+(7, 'LN5338', 108012, 6574658, 481944, 'Tumusime Eddy', 12000.00, '2026-10-04 08:18:05', 'done', 'partial_paid', 'field', 'nabahireoctave');
 
 -- --------------------------------------------------------
 
@@ -805,27 +797,6 @@ CREATE TABLE `transcation_log` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `unpaid_windows`
---
-
-CREATE TABLE `unpaid_windows` (
-  `id` bigint(20) NOT NULL,
-  `company_id` bigint(20) NOT NULL,
-  `branch_id` bigint(20) NOT NULL,
-  `client_id` bigint(20) NOT NULL,
-  `client_name` varchar(255) NOT NULL,
-  `contact` varchar(255) NOT NULL,
-  `unpaid_windows` bigint(20) UNSIGNED NOT NULL,
-  `partial_payment` bigint(20) UNSIGNED DEFAULT NULL,
-  `outstanding_balance` decimal(30,1) NOT NULL,
-  `deadline` date NOT NULL,
-  `location` varchar(255) NOT NULL,
-  `status` enum('pending','partial_paid','overdue','unpaid') DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `users`
 --
 
@@ -842,7 +813,7 @@ CREATE TABLE `users` (
   `password` varchar(255) DEFAULT NULL,
   `is_password_set` tinyint(1) DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -851,9 +822,10 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`user_id`, `company_id`, `branch_id`, `names`, `email`, `phone`, `status`, `role`, `profile_photo`, `password`, `is_password_set`, `created_at`, `updated_at`) VALUES
 (156571, 357151, NULL, 'bugingo Blaise', 'bugingo1@gmail.com', '0787345640', 'active', 'superadmin', NULL, '$2b$08$1TZ7JdnRaXqAlS4BVUR0YejIHKLdWSSOGDohM.fx.P2C1fXzHkR6O', 1, '2026-07-09 09:10:11', '2026-07-09 09:15:02'),
-(230551, 108012, NULL, 'Mugisha Dan', 'dan@gmail.com', '0798724546', 'active', 'subadmin', 'user-230551-1789632284037.jpg', '$2b$08$MF3DBiFkpFPinP3xE8L1qOvKl347.bEsZ2QMLlJbeTaMNWAqQOS7W', 1, '2026-07-09 09:05:25', '2026-09-17 10:04:44'),
+(230551, 108012, NULL, 'Mugisha Dan', 'dan@gmail.com', '0798724546', 'active', 'subadmin', 'user-230551-1791534897733.jpg', '$2b$08$MF3DBiFkpFPinP3xE8L1qOvKl347.bEsZ2QMLlJbeTaMNWAqQOS7W', 1, '2026-07-09 09:05:25', '2026-10-09 10:34:57'),
 (584211, 284573, NULL, 'kemirembe Joyce', 'codejoiner15@gmail.com', '0798724540', 'suspended', 'subadmin', 'user-584211-1790438899241.jpeg', '$2b$08$Ze/A9akUjO.KMj9UFbsD0OZxwif/fzDBNcQTprujaYXwum0C8iveq', 1, '2026-07-09 09:11:53', '2026-09-26 18:08:19'),
-(8503289, 108012, 6574658, 'nabahireoctave', 'nabahireoctave@gmail.com', '0798124546', 'active', 'cashier', NULL, '$2b$08$jIUeM7TKykz4plKcWvvZ..zS5YLhIPnN4PyEQT.8rn2tC.ETbnbbC', 1, '2026-09-17 09:58:27', '2026-09-17 09:59:03');
+(4823394, 108012, 890765, 'Ishimwe Precious', 'preciousWebale@gmail.com', '0732789551', 'active', 'cashier', NULL, '$2b$08$2jEGYjPLn1iOL.JAzMW6oOE/s/ObKqQF8NEGDY0i.ZYH2Uabj4UcS', 1, '2026-10-16 10:03:36', NULL),
+(8503289, 108012, 6574658, 'Jonathan David', 'jonathan015@gmail.com', '0798124546', 'active', 'cashier', 'user-8503289-1791535418827.png', '$2b$08$jIUeM7TKykz4plKcWvvZ..zS5YLhIPnN4PyEQT.8rn2tC.ETbnbbC', 1, '2026-09-17 09:58:27', '2026-10-09 14:00:06');
 
 --
 -- Indexes for dumped tables
@@ -913,8 +885,7 @@ ALTER TABLE `cashier_notification`
 -- Indexes for table `client`
 --
 ALTER TABLE `client`
-  ADD PRIMARY KEY (`client_id`),
-  ADD UNIQUE KEY `national_id` (`national_id`),
+  ADD PRIMARY KEY (`id`),
   ADD KEY `company_id` (`company_id`),
   ADD KEY `branch_id` (`branch_id`),
   ADD KEY `indx_client_id` (`client_id`);
@@ -966,10 +937,8 @@ ALTER TABLE `company_sms_usage`
 --
 ALTER TABLE `demand`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `contact` (`contact`),
   ADD KEY `fk_demand_branch` (`branch_id`),
   ADD KEY `company_id` (`company_id`),
-  ADD KEY `idx_created_at` (`created_at`),
   ADD KEY `idx_client_id` (`client_id`);
 
 --
@@ -979,15 +948,6 @@ ALTER TABLE `expense`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_company_expense` (`company_id`),
   ADD KEY `idx_expense` (`branch_id`);
-
---
--- Indexes for table `field`
---
-ALTER TABLE `field`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_branch_field_officer_created_date` (`branch_id`,`field_officer_id`,`created_date`),
-  ADD KEY `fk_field` (`company_id`),
-  ADD KEY `fk_officer_field` (`field_officer_id`);
 
 --
 -- Indexes for table `field_officer`
@@ -1129,15 +1089,6 @@ ALTER TABLE `transcation_log`
   ADD KEY `idx_date` (`transcation_date`);
 
 --
--- Indexes for table `unpaid_windows`
---
-ALTER TABLE `unpaid_windows`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `contact` (`contact`),
-  ADD KEY `idx_client_id_unpaid` (`client_id`),
-  ADD KEY `idx_deadline_unpaid` (`deadline`);
-
---
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -1174,13 +1125,19 @@ ALTER TABLE `branch`
 -- AUTO_INCREMENT for table `cashier`
 --
 ALTER TABLE `cashier`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `cashier_notification`
 --
 ALTER TABLE `cashier_notification`
   MODIFY `notifcation_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `client`
+--
+ALTER TABLE `client`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `client_flag`
@@ -1210,19 +1167,13 @@ ALTER TABLE `company_sms_usage`
 -- AUTO_INCREMENT for table `demand`
 --
 ALTER TABLE `demand`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `expense`
 --
 ALTER TABLE `expense`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `field`
---
-ALTER TABLE `field`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `field_officer`
@@ -1240,7 +1191,7 @@ ALTER TABLE `linktoken`
 -- AUTO_INCREMENT for table `loan`
 --
 ALTER TABLE `loan`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `location`
@@ -1252,7 +1203,7 @@ ALTER TABLE `location`
 -- AUTO_INCREMENT for table `notification`
 --
 ALTER TABLE `notification`
-  MODIFY `notification_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `notification_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `office`
@@ -1270,13 +1221,13 @@ ALTER TABLE `office_charge`
 -- AUTO_INCREMENT for table `payment_schedule`
 --
 ALTER TABLE `payment_schedule`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=52;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `repayment`
 --
 ALTER TABLE `repayment`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `sent_payable`
@@ -1330,12 +1281,6 @@ ALTER TABLE `terms_penalties`
 -- AUTO_INCREMENT for table `transcation_log`
 --
 ALTER TABLE `transcation_log`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `unpaid_windows`
---
-ALTER TABLE `unpaid_windows`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
@@ -1421,14 +1366,6 @@ ALTER TABLE `expense`
   ADD CONSTRAINT `fk_company_expense` FOREIGN KEY (`company_id`) REFERENCES `company` (`company_id`) ON UPDATE CASCADE;
 
 --
--- Constraints for table `field`
---
-ALTER TABLE `field`
-  ADD CONSTRAINT `fk_branch_field` FOREIGN KEY (`branch_id`) REFERENCES `branch` (`branch_id`),
-  ADD CONSTRAINT `fk_field` FOREIGN KEY (`company_id`) REFERENCES `company` (`company_id`),
-  ADD CONSTRAINT `fk_officer_field` FOREIGN KEY (`field_officer_id`) REFERENCES `field_officer` (`field_officer_id`);
-
---
 -- Constraints for table `field_officer`
 --
 ALTER TABLE `field_officer`
@@ -1441,8 +1378,7 @@ ALTER TABLE `field_officer`
 ALTER TABLE `loan`
   ADD CONSTRAINT `loan_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `company` (`company_id`) ON UPDATE CASCADE,
   ADD CONSTRAINT `loan_ibfk_2` FOREIGN KEY (`branch_id`) REFERENCES `branch` (`branch_id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `loan_ibfk_3` FOREIGN KEY (`client_id`) REFERENCES `client` (`client_id`) ON UPDATE CASCADE,
-  ADD CONSTRAINT `loan_ibfk_4` FOREIGN KEY (`national_id`) REFERENCES `client` (`national_id`);
+  ADD CONSTRAINT `loan_ibfk_3` FOREIGN KEY (`client_id`) REFERENCES `client` (`client_id`) ON UPDATE CASCADE;
 
 --
 -- Constraints for table `location`
@@ -1516,12 +1452,6 @@ ALTER TABLE `terms_penalties`
 --
 ALTER TABLE `transcation_log`
   ADD CONSTRAINT `transcation_log_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `company` (`company_id`) ON UPDATE CASCADE;
-
---
--- Constraints for table `unpaid_windows`
---
-ALTER TABLE `unpaid_windows`
-  ADD CONSTRAINT `fk_unpaid_w_client` FOREIGN KEY (`client_id`) REFERENCES `client` (`client_id`) ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

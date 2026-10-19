@@ -1318,33 +1318,11 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
     for (const clientinfo of client){
           const clientId= clientinfo.client_id;
 
-          const [stats]= await con.execute(`
-         SELECT cl.client_id,cl.client_name,cl.national_id, COALESCE(SUM(l.Balance),0)
-          AS outstandingBalance,COALESCE(SUM(l.amount_given),0) AS loan_amount, COALESCE(SUM(r.client_amount),0) 
-          AS TotalRepaid, SUM(CASE WHEN l.status='paid' THEN 1 ELSE 0 END) AS completeLoan,
-           COUNT(DISTINCT cl.company_id) as companycounts,
-           SUM(CASE WHEN l.status='active' THEN 1 ELSE 0 END) AS activeLoans FROM client cl LEFT JOIN loan l ON 
-           l.client_id=cl.client_id LEFT JOIN repayment r ON l.client_id=r.client_id WHERE cl.client_id=?
-            GROUP BY cl.client_name,cl.client_id,cl.national_id`,
-           [clientId])
+        //   const query=`` 
+        //  const [clientInfo]=await con.execute ();
 
   
-           const [Loans]=await con.execute(`SELECT loan_id,guarantor_name, guarantor_address, 
-            guarantor_contacts, amount_given, Balance, DailyInstallment status,loan_closingDate,
-             security_name, sec_pic FROM loan WHERE client_id=?`,[clientId]);
-             
-             const LoanWithPayment= [];
-           for(const loans of Loans ){
-            const loan_Id=loans.loan_id;
-            const [repayment]=await con.execute(`SELECT * FROM repayment WHERE loan_id=?`,[loan_Id])
-           LoanWithPayment.push(...Loans,repayment);
-
-           }
-              
-            CrossClientRecord.push({
-              stats,
-              LoanWithPayment
-            });
+       
 
           
 
