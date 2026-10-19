@@ -692,10 +692,7 @@ const AddCashier= async(req,res)=>{
     const {compId}=req.user;
     const payload=req.body;
 
-    if(!payload.branchId){
-    console.log(payload)
-    }
-    console.log(payload)
+ 
     let conn;
 const token= crypto.randomBytes(4).toString('hex');
 const hashedToken=crypto.createHash('sha256').update(token).digest('hex');

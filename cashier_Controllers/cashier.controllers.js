@@ -1,3 +1,4 @@
+const { dir } = require('console');
 const con=require('../mysql_connection/conn');
 const crypto= require('crypto');
  require('dotenv').config();
@@ -363,7 +364,7 @@ const FetchBorrowerInformation= async(req,res)=>{
 
         }
           
-      return res.status(400).json({size:0,messagekey:"error.data_not_found"})
+      return res.status(404).json({size:0,messagekey:"error.data_not_found"})
    
 
   }
@@ -551,9 +552,9 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
 
       const [verify]= await conn.execute(`
         SELECT 
-   EXISTS ( SELECT 1 FROM client WHERE phone=?) AS phoneexist,
-   EXISTS(SELECT 1 FROM client WHERE national_id=?) AS ninidexist
-        `,[phone,ninid]);
+   EXISTS ( SELECT 1 FROM client WHERE phone=? AND branch_id=?) AS phoneexist,
+   EXISTS(SELECT 1 FROM client WHERE national_id=? AND branch_id = ?) AS ninidexist
+        `,[phone,branchId,ninid,branchId]);
 
 
         if(verify[0].phoneexist){
@@ -846,23 +847,24 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
   const clientInfoMap={};
 
   try{
-    let query= `SELECT ps.status,ln.loan_id,ln.Balance,cl.client_name,cl.client_id,
+    let query= `SELECT ps.status,ln.loan_id,ln.Balance,cl.client_name,
     cl.phone,cl.client_address,SUM(CASE WHEN ps.status='overdue' THEN 1 ELSE 0 END) AS unPaidwindowCount,
     SUM(CASE WHEN ps.status='partial_paid' THEN 1 ELSE 0 END) AS partialPaymentCount
     FROM payment_schedule ps INNER JOIN loan ln ON ln.loan_id=ps.loan_id INNER JOIN 
     client cl ON cl.client_id=ln.client_id WHERE ln.company_id= ? AND ln.branch_id=?
-     AND ps.status IN('overdue','partial_paid') GROUP BY ln.loan_id`
+     AND ps.status IN('overdue','partial_paid')`
 
      if(search){
-      query+=` AND (LOWER(cl.client_name) LIKE LOWER(?) OR cl.client_id LIKE ? OR ln.loan_id LIKE ? )`
-        params.push(searchValue,search,searchValue);
+      query+=` AND (LOWER(cl.client_name) LIKE LOWER(?) OR CAST(ln.loan_id AS CHAR) LIKE ? )`
+        params.push(searchValue,searchValue);
      }
 
-     query+=` ORDER BY ln.id ASC LIMIT ? OFFSET ?`
+     query+=`GROUP BY ln.loan_id ORDER BY ln.id ASC LIMIT ? OFFSET ?`
      params.push(Limitnum,offset);
+
      
      const [result]= await con.execute(query,params);
-      if(result.length>0){
+     if(result.length>0){
       let countparams=[compId,branchId] 
       let  countquery= `SELECT COUNT(*) AS TotalRecord FROM (
       SELECT ln.loan_id FROM payment_schedule ps INNER JOIN loan ln
@@ -888,10 +890,9 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
 
      })
      
-
-      }
      
 
+      }
 
      return res.status(404).json({size:0,messagekey:`error.unpaid_data_notfound`})
     
@@ -1140,7 +1141,141 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
  }
 
  const FetChOverLoanedHistory= async(req,res)=>{
+  if(!req.user) return
+  const {compId,branchId}=req.user;
+  const {search,page,limit}=req.query;
+   const Limitnum=Number(limit)
+  const offset= Number(page-1)*Limitnum;
+   
+
   try{
+
+ const params=[compId,branchId]
+ const searchValue=`%${search}%`
+  let query=`SELECT ln.loan_id,ln.client_name,ln.client_id,ln.amount_given,ln.status,ps.due_date,ps.status_History 
+  ,ps.paid_amount,ps.status AS payment_status,ps.expected_amount FROM  payment_schedule ps INNER JOIN loan ln ON ln.loan_id=ps.loan_id WHERE
+   ln.company_id=? AND ln.branch_id=? AND ln.status IN ('paid')`
+ 
+   if(search){
+        query+=` AND LOWER(ln.client_name) LIKE LOWER(?)`
+        params.push(searchValue);
+        
+      }
+
+ 
+ query+=` GROUP BY ln.loan_id ORDER BY ln.id ASC LIMIT ? OFFSET ?`
+ params.push(Limitnum,offset);
+
+   let [result]= await con.execute(query,params);
+  
+    if(result.length>0){
+   let GroupOverLoaned= {};
+   const countParams=[compId,branchId];
+   let CountQuery= `SELECT COUNT(loan_id) AS totalRecord FROM loan ln WHERE company_id=? AND branch_id=? AND status IN('paid')`;
+    if(search){
+      CountQuery+=`AND LOWER(ln.client_name) LIKE LOWER(?)`;
+      countParams.push(searchValue);
+    }
+    
+    const [countResult]=await con.execute(CountQuery,countParams);
+    
+    result.forEach((row)=>{
+     const clientId=row.client_id
+     if(!GroupOverLoaned[clientId]){
+      GroupOverLoaned[clientId]={
+        client_id:row.client_id,
+        client_name:row.client_name,
+        totalLoanTaken:0,
+        lastloanTaken:null,
+        loans:[],
+        loanMap:{}
+      }
+     }
+
+     let client= GroupOverLoaned[clientId];
+      
+     if(!client.loanMap[row.loan_id]){
+      client.loanMap[row.loan_id]={
+      loanId:row.loan_id,
+      Loanamount:row.amount_given,
+      loanstatus:row.status,
+      schedules:[],
+      overdueHistory:0,
+      PartialPaymentHistory:0
+      }
+
+      client.loans.push(client.loanMap[row.loan_id])
+      
+     }
+
+     const loan=client.loanMap[row.loan_id];
+
+     if(row.due_date!==null && row.status_History!=='pending'){
+      loan.schedules.push({
+        due_date:row.due_date,
+        expected_amount:row.expected_amount,
+        status_history:row.status_History,
+        amount_paid:row.paid_amount,
+        payment_status:row.payment_status
+
+      })
+
+           
+     }     
+
+
+   })
+
+        Object.values(GroupOverLoaned).forEach((client)=>{
+        client.loans.forEach((loan)=>{
+          const schedule= loan.schedules;
+          schedule.forEach((sc)=>{
+            const status=sc?.status_history;
+            if(status?.toLowerCase()==='overdue'){
+              loan.overdueHistory++;
+            }
+            if(status?.toLowerCase()==='partial_paid'){
+              loan.PartialPaymentHistory++;
+            }
+           })
+        })
+
+        client.totalLoanTaken=client.loans.length;
+        client.lastloanTaken=client.loans[0]||null;
+
+      })
+
+const FinalData=Object.values(GroupOverLoaned).map(client=>({
+
+
+client_id:client.client_id,
+client_name:client.client_name,
+LastLoanTaken:client.totalLoanTaken,
+LastLoan:client.lastloanTaken,
+loans:client.loans,
+
+
+
+}))   
+
+   const totalOverLoan= countResult[0].totalRecord;
+   const totalPages= Math.ceil(totalOverLoan/Limitnum);
+
+ return res.status(200).json(
+  {
+    response:FinalData,
+    totalPage:totalPages,
+    totalRecord:totalOverLoan
+
+  }
+ ); 
+  
+}
+
+return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
+
+    
+
 
 
   }
@@ -1151,11 +1286,90 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
   }
  }
 
+
+
+ const HandleCrossSearchBorrowerRecord= async(req,res)=>{
+    if(!req.user) return;
+
+      const {searchQuery}= req.query;
+      const  error={};
+
+  try{
+     
+    if(!searchQuery){
+     error.query=`client.search_query _required`;
+    }
+
+
+    const [client] =await con.execute(`SELECT client_id,client_name,phone  FROM client WHERE
+       LOWER(TRIM(client_name))=LOWER(TRIM(?)) OR national_id=?`,
+       [searchQuery,searchQuery]);
+
+   if(client.length===0){
+     error.query=`client.query_not_found`;
+   }
+   
+    if(Object.keys(error).length>0){
+      return res.status(400).json({error});
+    }
+
+    const CrossClientRecord=[];
+
+    for (const clientinfo of client){
+          const clientId= clientinfo.client_id;
+
+          const [stats]= await con.execute(`
+         SELECT cl.client_id,cl.client_name,cl.national_id, COALESCE(SUM(l.Balance),0)
+          AS outstandingBalance,COALESCE(SUM(l.amount_given),0) AS loan_amount, COALESCE(SUM(r.client_amount),0) 
+          AS TotalRepaid, SUM(CASE WHEN l.status='paid' THEN 1 ELSE 0 END) AS completeLoan,
+           COUNT(DISTINCT cl.company_id) as companycounts,
+           SUM(CASE WHEN l.status='active' THEN 1 ELSE 0 END) AS activeLoans FROM client cl LEFT JOIN loan l ON 
+           l.client_id=cl.client_id LEFT JOIN repayment r ON l.client_id=r.client_id WHERE cl.client_id=?
+            GROUP BY cl.client_name,cl.client_id,cl.national_id`,
+           [clientId])
+
+  
+           const [Loans]=await con.execute(`SELECT loan_id,guarantor_name, guarantor_address, 
+            guarantor_contacts, amount_given, Balance, DailyInstallment status,loan_closingDate,
+             security_name, sec_pic FROM loan WHERE client_id=?`,[clientId]);
+             
+             const LoanWithPayment= [];
+           for(const loans of Loans ){
+            const loan_Id=loans.loan_id;
+            const [repayment]=await con.execute(`SELECT * FROM repayment WHERE loan_id=?`,[loan_Id])
+           LoanWithPayment.push(...Loans,repayment);
+
+           }
+              
+            CrossClientRecord.push({
+              stats,
+              LoanWithPayment
+            });
+
+          
+
+    }  
+
+
+   const data= Object.values(CrossClientRecord);
+   console.dir(data,{depth:null});    
+
+
+  }
+  catch(err){
+    console.log(`Error in crossSearchBorrowerRecord ${err.message}`);
+    return res.status(500).json({size:1,messagekey:`error.servererror`});
+  }
+   
+
+ }
+
+
 module.exports= {
     FindCurrentBranchBorrowers,HandleSaveLoaninfo,HandlePay,HandleLoanConfirm,
     ReturnCurrentBranchLoans,FetchBorrowerInformation,HandleSaveBorrowerInfo,
     FetchRequestedPayments,FetchFieldPayment,FetchUnpaidHistory,
     HandleReturnCurrentCashierProfile,CashierProfileUpdate,HandleRequestNewLoan,GetLoanHistory,
-    MyRequest,FetchCurrentDemand,FetchNotification,FetChOverLoanedHistory
+    MyRequest,FetchCurrentDemand,FetchNotification,FetChOverLoanedHistory,HandleCrossSearchBorrowerRecord
 }
 
