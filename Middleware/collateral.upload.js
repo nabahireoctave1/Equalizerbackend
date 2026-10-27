@@ -10,7 +10,7 @@ const storage= multer.diskStorage({
     
     filename:(req,file,cb)=>{
         const ext= path.extname(file.originalname)
-        cb(null,`user-${req.user.userId}-${Date.now()}${ext}`)
+        cb(null,`collateral-${req.body.LoanId}-${Date.now()}${ext}`);
     }
 
 })

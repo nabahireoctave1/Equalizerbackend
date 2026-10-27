@@ -2,14 +2,14 @@
 
  const ValidateNewLoanRequest=[
 
-   body('clientID').notEmpty().withMessage('client.clientId_required').bail().isNumeric()
+   body('clientID').trim().notEmpty().withMessage('client.clientId_required').bail().isNumeric()
    .withMessage('client.clientId_Isnumeric').isLength({min:6,max:6}).withMessage('client.Id_LenghtIs'),
-   body('Loanamount').notEmpty().withMessage('client.loan_amount_required')
+   body('Loanamount').trim().notEmpty().withMessage('client.loan_amount_required')
    .bail().isFloat({min:0}).withMessage('client.min_length'),
-   body('guarantor').notEmpty().withMessage('client.guarantor_required'),
-   body('guarantorContact').notEmpty().withMessage('client.guarantor_contact_required')
+   body('guarantor').trim().notEmpty().withMessage('client.guarantor_required'),
+   body('guarantorContact').trim().notEmpty().withMessage('client.guarantor_contact_required')
    .bail().isLength({min:10,max:10}).withMessage('client.phone_number_isLength'),
-   body('guarantorAddress').notEmpty().withMessage('client.gurantor_address_required'),
+   body('guarantorAddress').trim().notEmpty().withMessage('client.gurantor_address_required'),
    
    
    (req,res,next)=>{ 

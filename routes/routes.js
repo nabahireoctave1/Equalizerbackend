@@ -31,7 +31,10 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
      HandleReturnCurrentCashierProfile, CashierProfileUpdate,HandleRequestNewLoan,GetLoanHistory,
      FetchCurrentDemand,
      FetChOverLoanedHistory,
-     HandleCrossSearchBorrowerRecord} 
+     HandleCrossSearchBorrowerRecord,
+     HandleUploadCollateral,
+     FetchCurrentstockinfo,
+     HandleReleaseCollateral} 
      =require('../cashier_Controllers/cashier.controllers')
 
 
@@ -97,8 +100,10 @@ router.get('/profileInfo',VerifyToken,VerifyRole('cashier'),HandleReturnCurrentC
 router.put('/cashier-profile-update',VerifyToken,VerifyRole('cashier'),upload.single('profile_photo'),ValidateCashierProfileInformation,CashierProfileUpdate)
 router.get('/current-Demand',VerifyToken,VerifyRole('cashier'),FetchCurrentDemand)
 router.get('/Current-OverLoaned/History',VerifyToken,VerifyRole('cashier'),FetChOverLoanedHistory)
-router.post('/search-borrower-Record',VerifyToken,VerifyRole('cashier'),HandleCrossSearchBorrowerRecord)
- 
+router.post('/search-borrower-Record',VerifyToken,VerifyRole('cashier'),HandleCrossSearchBorrowerRecord);
+router.post('/Upload-collateral-picture',VerifyToken,VerifyRole('cashier'),Upload.single('secPicture'),HandleUploadCollateral) 
+router.get('/stock-info',VerifyToken,VerifyRole('cashier'),FetchCurrentstockinfo);
+router.post('/Release-collateral/:LoanId/:collateral_name/:clientId',VerifyToken, VerifyRole('cashier'),HandleReleaseCollateral)
 
 router.post('/newLoan-request',ValidateNewLoanRequest,HandleRequestNewLoan);
 router.post('/Loan-History',GetLoanHistory);

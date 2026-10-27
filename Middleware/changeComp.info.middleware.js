@@ -3,9 +3,9 @@ const {body,validationResult}=require('express-validator');
 
 
 const ValidatechangedCompInfo= [
- body('companyName').notEmpty().withMessage('Company name required !'),
- body('companyAdmin').notEmpty().withMessage('Company admin name required !'),
- body('companyLocation').notEmpty().withMessage('Company  operating location required !'),
+ body('companyName').trim().notEmpty().withMessage('Company name required !'),
+ body('companyAdmin').trim().notEmpty().withMessage('Company admin name required !'),
+ body('companyLocation').trim().notEmpty().withMessage('Company  operating location required !'),
 
  (req,res,next)=>{
 

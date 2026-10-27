@@ -3,10 +3,10 @@ const {body,validationResult}=require('express-validator');
 
 const ValidateBorrowerInfo= [
     body('name').notEmpty().withMessage('client.client_name_required').trim(),
-    body('ninid').notEmpty().withMessage('client.Id_required').bail()
+    body('ninid').notEmpty().withMessage('client.Id_required').trim().bail()
     .isNumeric().withMessage('client.client.Id_isnumeric').isLength({min:16,max:16})
     .withMessage('client.Id_length'),
-    body('phone').notEmpty().withMessage('client.contact_required').bail().
+    body('phone').notEmpty().withMessage('client.contact_required').trim().bail().
     isNumeric().withMessage('client.contact_isnumeric').isLength({min:10,max:10})
     .withMessage('client.contact_length'),
    body('client_address').notEmpty().withMessage('client.client_address_required').trim(),

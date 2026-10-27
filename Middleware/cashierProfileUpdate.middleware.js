@@ -4,11 +4,11 @@
 
   const ValidateCashierProfileInformation= [
     body('names').notEmpty().withMessage('cashier.names_required').trim(),
-    body('Contact').notEmpty().withMessage('cashier.phone_num_required').bail()
+    body('Contact').trim().notEmpty().withMessage('cashier.phone_num_required').bail()
     .isNumeric().withMessage('cashier.phone_no_must_be_numeric').isLength({min:10,max:10})
     .withMessage('cashier.phone_number_islength'),
-   body('location').notEmpty().withMessage('cashier.location_required').trim(),
-   body('email').notEmpty().withMessage('cashier.email_required').bail().isEmail()
+   body('location').trim().notEmpty().withMessage('cashier.location_required').trim(),
+   body('email').trim().notEmpty().withMessage('cashier.email_required').bail().isEmail()
    .withMessage('Invalid Email').normalizeEmail(),
 
    (req,res,next)=>{

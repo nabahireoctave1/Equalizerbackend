@@ -3,8 +3,8 @@ const {body,validationResult}=require('express-validator')
 
 
 const validateSMSPackageInputs= [
-    body('smsPackage').notEmpty().withMessage('Please enter SMS package').bail().isNumeric().withMessage('SMS pakage must be number'),
-    body('PaymentNumber').notEmpty().withMessage('Please enter Phone number').bail().isNumeric().withMessage('Phone number must be number')
+    body('smsPackage').trim().notEmpty().withMessage('Please enter SMS package').bail().isNumeric().withMessage('SMS pakage must be number'),
+    body('PaymentNumber').trim().notEmpty().withMessage('Please enter Phone number').bail().isNumeric().withMessage('Phone number must be number')
     .isLength({min:10,max:10}).withMessage('Phone number must be 10 digits'),
     (req,res,next)=>{
 

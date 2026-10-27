@@ -5,10 +5,10 @@ const {body,validationResult}=require('express-validator')
 
 
 const ValidatePassword= [
-    body('password').notEmpty().withMessage('Please enter password!')
+    body('password').trim().notEmpty().withMessage('Please enter password!')
     .bail().isLength({min:6,max:8}).withMessage('Password must contain 6 or 8 characters!'),
 
-    body('confirmpassword').notEmpty().withMessage('Please confirm password!').bail()
+    body('confirmpassword').trim().notEmpty().withMessage('Please confirm password!').bail()
     .isLength({min:6,max:8}).withMessage('Password must contain 6 or 8 characters!'),
 
     (req,res,next)=>{

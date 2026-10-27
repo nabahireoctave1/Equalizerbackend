@@ -255,12 +255,12 @@ const HandleSaveLoaninfo= async(req,res)=>{
 await conn.execute(`
  INSERT INTO loan (loan_id, company_id, branch_id, client_id, client_name, national_id,
   client_address, client_contact, bussiness_location, bussiness_Type, client_bussinessName,
-   guarantor_name, guarantor_address,guarantor_contacts, amount_given, Balance, 
+   guarantor_name, guarantor_address,guarantor_contacts, amount_given, Balance,DailyInstallment, 
    amountAfterOfficeCharge, chargeAmount, totalpay,fees,loan_closingDate,
     pay_frequency, security_name,sec_pic, approved) VALUES 
-    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 `,[loanid,compId,branchId,clientId,client_name,IdNumber,client_address,client_contact,client_B_location
-  ,client_B_type,client_B_Name,guarantor_name,guarantor_address,guarantor_contact,amount,amount,
+  ,client_B_type,client_B_Name,guarantor_name,guarantor_address,guarantor_contact,amount,amount,installment,
   amountAfterOfficeCharge,chargeAmount,totalPay,intrest,loan_closingDate,payment_frequency,security_name
   ,file,cashier_name
 ]);
@@ -429,12 +429,12 @@ const HandleLoanConfirm= async(req,res)=>{
 await conn.execute(`
  INSERT INTO loan (loan_id, company_id, branch_id, client_id, client_name, national_id,
   client_address, client_contact, bussiness_location,bussiness_Type,client_bussinessName,
-   guarantor_name, guarantor_address,guarantor_contacts,amount_given,Balance, 
+   guarantor_name, guarantor_address,guarantor_contacts,amount_given,Balance,DailyInstallment, 
    amountAfterOfficeCharge,chargeAmount,totalpay,fees,loan_closingDate,
     pay_frequency, security_name,sec_pic, approved) VALUES 
-    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 `,[loanId,compId,branchId,clientId,client_name,IdNumber,client_address,client_contact,client_B_location
-  ,client_B_type,client_B_Name,guarantor_name,guarantor_address,guarantor_contact,amount,amount,
+  ,client_B_type,client_B_Name,guarantor_name,guarantor_address,guarantor_contact,amount,amount,installment,
   amountAfterOfficeCharge,chargeAmount,totalPay,intrest,loan_closingDate,payment_frequency,security_name
   ,file,cashier_name
 ]);
@@ -613,7 +613,7 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
       conn=await con.getConnection();
       await conn.beginTransaction();
       
-      const [row] =await conn.execute(`SELECT expected_amount,due_date,paid_amount,status
+      const [row] =await conn.execute(`SELECT loan_id,expected_amount,due_date,paid_amount,status
         FROM payment_schedule WHERE loan_id=? AND due_date<=CURRENT_DATE() AND
          status IN('partial_paid','overdue')`,[LoanId])
          if(row.length===0){
@@ -682,10 +682,8 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
          }
          
          else{
-          
-          console.log('hari due zitishuwe ')
-          // logic continue for pay unpaid installment
 
+         console.log('hari due zitishuye')
 
          }
 
@@ -1292,6 +1290,7 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
     if(!req.user) return;
 
       const {searchQuery}= req.query;
+      const {compId}=req.user;
       const  error={};
 
   try{
@@ -1301,9 +1300,11 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
     }
 
 
-    const [client] =await con.execute(`SELECT client_id,client_name,phone  FROM client WHERE
+    const [client] =await con.execute(`SELECT client_id,client_name,phone,client_address,national_id  FROM client WHERE
        LOWER(TRIM(client_name))=LOWER(TRIM(?)) OR national_id=?`,
        [searchQuery,searchQuery]);
+
+
 
    if(client.length===0){
      error.query=`client.query_not_found`;
@@ -1313,25 +1314,43 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
       return res.status(400).json({error});
     }
 
-    const CrossClientRecord=[];
+    const clientIds= client.map((row=>row.client_id));
+    const query=`SELECT 
+           COUNT(DISTINCT cl.company_id) AS FoundIn, SUM(CASE WHEN ln.status='active' THEN ln.amount_given ELSE 0 END) 
+            AS TotalactiveLoan_amount , SUM(CASE WHEN ln.status='active' THEN 1 ELSE 0 END)
+             AS activeLoans , SUM(CASE WHEN ln.status='paid' THEN 1 ELSE 0 END ) AS completed_loans,
+             SUM(CASE WHEN ln.status='active' THEN ln.Balance ELSE 0 END) AS outstandingactiveLoanBalance
+              FROM client cl LEFT JOIN loan ln ON ln.client_id=cl.client_id WHERE 
+              cl.client_id IN(?)`;
+        
+         const LoanInfoquery=`SELECT ln.loan_id,ln.amount_given, ln.Balance,ln.client_name,
+          ln.guarantor_name,ln.guarantor_contacts,b.branch_name, cmp.company_name, COALESCE(SUM(r.client_amount),0)
+          AS loanTotalRepaidPaid FROM loan ln INNER JOIN company cmp ON cmp.company_id=ln.company_id INNER JOIN branch 
+          b ON b.branch_id=ln.branch_id LEFT JOIN repayment r ON ln.loan_id=r.loan_id WHERE ln.client_id IN(?)
+           GROUP BY ln.loan_id`
 
-    for (const clientinfo of client){
-          const clientId= clientinfo.client_id;
 
-        //   const query=`` 
-        //  const [clientInfo]=await con.execute ();
-
-  
-       
-
-          
-
-    }  
+    const [stats]=await con.query(query,[clientIds]);
+    const  [LoanHistory]= await con.query(LoanInfoquery,[clientIds]) 
 
 
-   const data= Object.values(CrossClientRecord);
-   console.dir(data,{depth:null});    
+    let uniquePhonesnum=[...new Set(client.map(c=>c.phone).filter(Boolean))]; 
+    let uniqueAddress=[...new Set(client.map(c=>c.client_address).filter(Boolean))]
+    let uniqueNames=[...new Set(client.map(c=>c.client_name ? c.client_name.toLowerCase().trim():'').filter(Boolean))]
 
+
+   const FinalResponse= {
+     ninId:client[0].national_id,
+     clientName:uniqueNames,
+     clientAddress:uniqueAddress,
+     phone:uniquePhonesnum,
+     stats:stats[0]||{},
+     LoanHistory:LoanHistory||[]
+   }
+
+
+
+   return res.status(200).json(FinalResponse);
 
   }
   catch(err){
@@ -1343,11 +1362,154 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
  }
 
 
+
+
+
+
+const HandleUploadCollateral=async(req,res)=>{
+  if(!req.user) return
+      const file= req.file? req.file.filename:null
+     const {LoanId,clientId,client_name,collateral_name}=req.body;
+     const {compId,branchId}=req.user;
+  let conn;
+  try{
+   conn= await con.getConnection();
+   await conn.beginTransaction();
+
+   const [isexistinstock]=await conn.execute(`SELECT EXISTS(SELECT  1 FROM stock  WHERE loan_id=?)AS loanExist`,[LoanId])   
+    if(isexistinstock[0].loanExist===1){
+      return res.status(400).json({succes:false,messagekey:`error.collateral_alreadyuploaded`})
+    }
+   await con.execute(`UPDATE loan SET sec_pic=? WHERE  loan_id=? AND client_id=? `,[file,LoanId,clientId]);
+   
+   await conn.execute(`INSERT INTO stock(company_id, branch_id, client_id,loan_id,
+     client_name, security_name, picture) VALUES (?,?,?,?,?,?,?)`,
+     [compId,branchId,clientId,LoanId,client_name,collateral_name,file])
+
+     await conn.execute(`INSERT INTO collateral_stocknotification
+      ( company_id, branch_id, collateralname, client_Id,loan_id) VALUES (?,?,?,?,?)`,[compId,branchId,collateral_name,clientId,LoanId])
+
+  await conn.commit();
+
+  return res.status(200).json({success:true,messagekey:`success.upload_collateral_done`})
+
+
+  }
+
+ catch(err){
+  if(conn) await conn.rollback();
+    console.log(`Error in upload collateral picture controller ${err.message}`)
+    return res.status(500).json({success:false,messagekey:`error.servererror`});
+ } finally{
+  if(conn) await conn.release();
+ }
+
+}
+
+
+const FetchCurrentstockinfo= async(req,res)=>{
+   
+  const {limit,page,searchQuery}=req.query;
+  const {compId,branchId}=req.user;
+   const limitNum= Number(limit);
+   const offSet= Number(page-1)*limitNum;
+   const searchPartener=`%${searchQuery}%`; 
+
+   const Params= [compId,branchId];
+
+  try{
+
+    let query= `SELECT loan_id,client_id, client_name, security_name, picture, released_date, status,
+     collateral_registered_at FROM stock WHERE company_id=? AND branch_id=? AND status IN('instock') `
+   
+     if(searchQuery){
+      query+=` AND (TRIM(loan_id) LIKE TRIM(?) OR LOWER(TRIM(client_name)) LIKE (LOWER(TRIM(?)))) `
+      Params.push(searchPartener,searchPartener);
+     }
+
+     query+=` ORDER BY id DESC  LIMIT ? OFFSET ?`
+     Params.push(limitNum,offSet);
+    
+     const [result]= await con.execute(query,Params) 
+      if(result.length>0){
+        const countParams=[compId,branchId];
+        let countquery= `SELECT COUNT(*) AS totalRecord FROM stock WHERE company_id=? AND branch_id=? AND status IN('instock')`;
+           if(searchQuery){
+        countquery+=` AND (TRIM(loan_id) LIKE TRIM(?) OR LOWER(TRIM(client_name)) LIKE (LOWER(TRIM(?))))`
+        countParams.push(searchPartener,searchPartener);
+            
+        }
+        
+        const [[countResult]]=await con.execute(countquery,countParams);
+        const totalRec= countResult.totalRecord;
+      
+        const totalPage= Math.ceil(totalRec/limitNum);
+       
+        return res.status(200).json({
+          response:result,
+        totalPage:totalPage,
+        totalRecord:totalRec
+        })
+       
+
+
+      }
+   
+
+      return res.status(404).json({size:0,messagekey:`error.stock_info_not_found`});
+ 
+  }
+
+  catch(err){
+    console.log(`Error in FetchCurrentStockinfo controller ${err.message}`);
+    return res.status(500).json({size:1,messagekey:`error.servererror`});
+  }
+}
+
+
+const HandleReleaseCollateral= async(req,res)=>{
+  
+  const {LoanId,collateral_name,clientId}=req.params;
+  const {compId,branchId}=req.user;
+   
+  let conn;
+
+  try{
+   
+    conn= await con.getConnection();
+     
+    conn.beginTransaction();
+     
+    await conn.execute(`UPDATE stock SET status='released' WHERE loan_id=?`,[LoanId]);
+    await conn.execute(`INSERT INTO collateral_stocknotification
+      (company_id,branch_id,collateralname, client_Id, loan_id, collateral_status) VALUES (?,?,?,?,?,?)`,
+      [compId,branchId,collateral_name,clientId,LoanId,'released']);
+    
+   await conn.commit();
+    
+   return res.status(200).json({sucess:true,messagekey:`success.collateral_released`});
+
+  }
+
+  catch(err){
+
+    if(conn) await conn.rollback();
+    console.log(`Error in handleRelease collateral controller ${err.message}`);
+    return res.status(500).json({success:false,messagekey:`error.servererror`});
+  }
+  finally{
+    if(conn) await conn.release();
+  }
+}
+
+
+
 module.exports= {
     FindCurrentBranchBorrowers,HandleSaveLoaninfo,HandlePay,HandleLoanConfirm,
     ReturnCurrentBranchLoans,FetchBorrowerInformation,HandleSaveBorrowerInfo,
     FetchRequestedPayments,FetchFieldPayment,FetchUnpaidHistory,
     HandleReturnCurrentCashierProfile,CashierProfileUpdate,HandleRequestNewLoan,GetLoanHistory,
-    MyRequest,FetchCurrentDemand,FetchNotification,FetChOverLoanedHistory,HandleCrossSearchBorrowerRecord
+    MyRequest,FetchCurrentDemand,FetchNotification,FetChOverLoanedHistory,HandleCrossSearchBorrowerRecord,
+    HandleUploadCollateral,FetchCurrentstockinfo,HandleReleaseCollateral
 }
 

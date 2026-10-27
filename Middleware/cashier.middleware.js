@@ -2,13 +2,13 @@ const {body,validationResult}=require('express-validator');
 
 
 const validatecashierRequest=[
-    body('names').notEmpty().withMessage('nc.validationMessage.names_require'),
-    body('email').optional({nullable:true}),
-    body('location').notEmpty().withMessage('nc.validationMessage.location_required'),
-    body('phoneno').notEmpty().withMessage('nc.validationMessage.phone_number_required')
+    body('names').trim().notEmpty().withMessage('nc.validationMessage.names_require'),
+    body('email').trim().optional({nullable:true}),
+    body('location').trim().notEmpty().withMessage('nc.validationMessage.location_required'),
+    body('phoneno').trim().notEmpty().withMessage('nc.validationMessage.phone_number_required')
     .isNumeric().withMessage('phone_is_numeric')
     .isLength({min:10,max:10}).withMessage('nc.validationMessage.phone_length'),
-    body('branch').notEmpty().withMessage('nc.validationMessage.branch_required')
+    body('branch').trim().notEmpty().withMessage('nc.validationMessage.branch_required')
     ,(req,res,next)=>{
   const errors=validationResult(req)
   if(!errors.isEmpty()){

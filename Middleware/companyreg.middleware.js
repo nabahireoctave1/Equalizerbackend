@@ -51,7 +51,7 @@ const companyValidation = [
     .withMessage("Invalid email format!"),
 
   body("permissionId")
-    .optional({nullable:true})  
+    .trim() .optional({nullable:true})  
       .bail()
     .isNumeric()
     .withMessage("Permission must be number!"),
