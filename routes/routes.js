@@ -16,6 +16,7 @@ const validatePayments= require('../Middleware/Paying.validation.middleware')
 const ValidateBorrowerInfo=require('../Middleware/NewBorrower.middware')
 const ValidateCashierProfileInformation=require('../Middleware/cashierProfileUpdate.middleware')
 const ValidateNewLoanRequest= require('../Middleware/NewLoanRequest.middware')
+const ValidateSent= require('../Middleware/AddCashSent.middleware')
 const upload=require('../Middleware/upload');
 const Upload= require('../Middleware/collateral.upload')
 const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
@@ -34,7 +35,11 @@ const { OverviewDash,Transaction, cashier, CompanyAdmin_info,saveSpadminsetting,
      HandleCrossSearchBorrowerRecord,
      HandleUploadCollateral,
      FetchCurrentstockinfo,
-     HandleReleaseCollateral} 
+     HandleReleaseCollateral,
+     HandleAddCashSent,
+     FetchBranchCashSentHistory,
+     FetchBranchCashReceipt,
+    } 
      =require('../cashier_Controllers/cashier.controllers')
 
 
@@ -104,7 +109,10 @@ router.post('/search-borrower-Record',VerifyToken,VerifyRole('cashier'),HandleCr
 router.post('/Upload-collateral-picture',VerifyToken,VerifyRole('cashier'),Upload.single('secPicture'),HandleUploadCollateral) 
 router.get('/stock-info',VerifyToken,VerifyRole('cashier'),FetchCurrentstockinfo);
 router.post('/Release-collateral/:LoanId/:collateral_name/:clientId',VerifyToken, VerifyRole('cashier'),HandleReleaseCollateral)
-
+ router.post('/add-cash-sent',VerifyToken,VerifyRole('cashier'),ValidateSent,HandleAddCashSent);
+ router.get('/get-current-branch-cash-sent',VerifyToken,VerifyRole('cashier'),FetchBranchCashSentHistory);
+ router.get('/get-current-branch-cash-receipt',VerifyToken,VerifyRole('cashier'),FetchBranchCashReceipt)
+ 
 router.post('/newLoan-request',ValidateNewLoanRequest,HandleRequestNewLoan);
 router.post('/Loan-History',GetLoanHistory);
 

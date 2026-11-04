@@ -12,6 +12,7 @@ const http= require('http')
 
  const {getWhatsappStatus,StartWhattApp}= require('./otherController/WhattappController');
  let {getonlineuser,sendManualyNotification,HandlesendTo}= require('./MainController/Controllers');
+ const {FetchBranchNotification} =require('./cashier_Controllers/cashier.controllers')
 const path = require('path');
 
 const app = express()
@@ -72,6 +73,7 @@ const {userId,role,compId}= socket.user;
 HandlesendTo(socket);
 
 sendManualyNotification(io,socket);
+FetchBranchNotification(io,socket);
 activeuser.add(userId);
 console.log(activeuser.size,'online')
 getonlineuser(activeuser.size);

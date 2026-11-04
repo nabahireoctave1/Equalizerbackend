@@ -58,7 +58,12 @@ async function StartWhattApp() {
             
 
             if (shouldReconnect) {
+                let maxretries= 5;
+
+                for(let i; i<maxretries; i++){
                 StartWhattApp();
+
+                }
                 
             } 
         }

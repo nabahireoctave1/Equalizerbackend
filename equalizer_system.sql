@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 19, 2026 at 07:04 PM
+-- Generation Time: Oct 27, 2026 at 08:07 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -135,7 +135,7 @@ CREATE TABLE `cashier` (
 
 INSERT INTO `cashier` (`id`, `cashier_id`, `company_id`, `branch_id`, `cashier_name`, `cashier_contact`, `cashier_email`, `cashier_location`, `status`, `created_at`, `updated_at`) VALUES
 (1, '8503289', 108012, 6574658, 'Jonathan David', '0798124546', 'jonathan015@gmail.com', 'Nyagatare', 'active', '2026-10-08 13:54:21.407153', '2026-10-09 14:00:06.649000'),
-(2, '4823394', 108012, 890765, 'Ishimwe Precious', '0732789551', 'preciousWebale@gmail.com', 'Uganda', 'active', '2026-10-16 08:03:36.760460', NULL);
+(2, '4823394', 108012, 890765, 'Ishimwe Precious', '0732789551', 'preciouswebale@gmail.com', 'Uganda', 'active', '2026-10-16 08:03:36.760460', '2026-10-20 19:47:24.902000');
 
 -- --------------------------------------------------------
 
@@ -219,6 +219,33 @@ INSERT INTO `client_flag` (`id`, `company_id`, `branch_id`, `client_name`, `repo
 (4, 284573, 6574658, 'mugisha sam', 'cyusa emma', 'bad payment behaviors', '2026-08-14 18:37:27', 'approved'),
 (5, 284573, NULL, 'bugingo Blaise', 'precious ishimwe', 'has overdue loans', '2026-08-14 18:42:28', 'rejected'),
 (6, 284573, 6574658, 'mugabo Eddy', 'mugabo Emma', 'froud suspecious', '2026-08-14 18:43:47', 'approved');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `collateral_stocknotification`
+--
+
+CREATE TABLE `collateral_stocknotification` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `company_id` bigint(70) NOT NULL,
+  `branch_id` bigint(70) NOT NULL,
+  `collateralname` varchar(255) NOT NULL,
+  `client_Id` bigint(70) NOT NULL,
+  `loan_id` varchar(70) NOT NULL,
+  `collateral_status` enum('released','received') DEFAULT 'received',
+  `status` enum('unread','read') DEFAULT 'unread'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `collateral_stocknotification`
+--
+
+INSERT INTO `collateral_stocknotification` (`id`, `company_id`, `branch_id`, `collateralname`, `client_Id`, `loan_id`, `collateral_status`, `status`) VALUES
+(1, 108012, 6574658, 'Land', 213644, 'LN1388', 'received', 'unread'),
+(2, 108012, 6574658, 'Computer', 7873765, 'LN3796', 'received', 'unread'),
+(3, 108012, 6574658, 'Land Details', 7873765, 'LN4429', 'received', 'unread'),
+(4, 108012, 6574658, 'Computer', 481944, 'LN1246', 'received', 'unread');
 
 -- --------------------------------------------------------
 
@@ -455,9 +482,9 @@ CREATE TABLE `loan` (
 --
 
 INSERT INTO `loan` (`id`, `loan_id`, `company_id`, `branch_id`, `client_id`, `client_name`, `national_id`, `client_address`, `client_contact`, `bussiness_location`, `bussiness_Type`, `client_bussinessName`, `guarantor_name`, `guarantor_address`, `guarantor_contacts`, `amount_given`, `Balance`, `DailyInstallment`, `amountAfterOfficeCharge`, `chargeAmount`, `totalpay`, `status`, `fees`, `loan_closingDate`, `pay_frequency`, `security_name`, `sec_pic`, `approved`) VALUES
-(1, 'LN1388', 108012, 6574658, 213644, 'Mugabo edison', '1234567891012341', 'Hoima', '0798124549', 'Kampala', 'sole properiator ship', 'coffeshop', 'Nabahire octave', 'Mbarara', '0798724546', 60000.00, 48000.00, 0.00, 57000.00, 3000.00, 60000.00, 'paid', 0, '2026-10-06', 'daily', 'Land', NULL, 'kemirembe peace'),
-(2, 'LN3796', 108012, 6574658, 7873765, 'Kampire Joy', '1234567891012345', 'Bugesera', '0783734567', 'kampala', 'Sole properiotor ship', 'coffeeshop', 'Manzi eddy', 'Hoima', '0787345640', 80000.00, 20000.00, 0.00, 76000.00, 4000.00, 80000.00, 'active', 0, '2026-10-07', 'daily', 'Computer', NULL, 'kemirembe peace'),
-(3, 'LN5338', 108012, 6574658, 481944, 'Tumusime Eddy', '4490001888773245', 'Hoima', '0787345620', 'Ryatonde', 'sole properiator ship', 'restuarant', 'Nyandwi james', 'Kampala', '0798724546', 500000.00, 468000.00, 0.00, 500000.00, 0.00, 500000.00, 'paid', 0, '2026-10-28', 'daily', 'Hotel Park', NULL, 'kemirembe peace');
+(1, 'LN1246', 108012, 6574658, 481944, 'Tumusime Eddy', '4490001888773245', 'Hoima', '0787345620', 'Ryatonde', 'sole properiator ship', 'restuarant', 'kayesu Joy', 'Kampala', '0798724546', 800000.00, 800000.00, 45000.00, 800000.00, 0.00, 800000.00, 'active', 0, '2026-11-08', 'daily', 'Computer', 'collateral-LN1246-1792742949489.jpg', 'jonathan david'),
+(2, 'LN4429', 108012, 6574658, 7873765, 'Kampire Joy', '1234567891012345', 'Bugesera', '0783734567', 'kampala', 'Sole properiotor ship', 'coffeeshop', 'jane Hanet', 'Hoima', '0798724546', 120000.00, 94000.00, 30000.00, 114000.00, 6000.00, 120000.00, 'active', 0, '2026-10-24', 'daily', 'Land Details', 'collateral-LN4429-1792742900487.jpg', 'nabahire octave'),
+(3, 'LN3202', 108012, 890765, 997121, 'kampire joy', '1234567891012345', 'Rwanda', '0783734567', 'Bugesera', 'Limited liabilities', 'IT company', 'jonathan david', 'Kampala', '0798724546', 400000.00, 400000.00, 60000.00, 400000.00, 0.00, 400000.00, 'active', 0, '2026-10-30', 'daily', 'Television', NULL, 'ishimwe precious');
 
 -- --------------------------------------------------------
 
@@ -558,38 +585,34 @@ CREATE TABLE `payment_schedule` (
 --
 
 INSERT INTO `payment_schedule` (`id`, `loan_id`, `due_date`, `expected_amount`, `paid_amount`, `status`, `status_History`) VALUES
-(1, 'LN1388', '2026-10-04', 20000.00, 12000.00, 'partial_paid', 'partial_paid'),
-(2, 'LN1388', '2026-10-05', 20000.00, 0.00, 'pending', 'pending'),
-(3, 'LN1388', '2026-10-06', 20000.00, 0.00, 'pending', 'pending'),
-(4, 'LN3796', '2026-10-04', 20000.00, 10000.00, 'advance', 'pending'),
-(5, 'LN3796', '2026-10-05', 20000.00, 0.00, 'pending', 'pending'),
-(6, 'LN3796', '2026-10-06', 20000.00, 0.00, 'pending', 'pending'),
-(7, 'LN3796', '2026-10-07', 20000.00, 0.00, 'pending', 'pending'),
-(8, 'LN5338', '2026-10-04', 20000.00, 0.00, 'pending', 'pending'),
-(9, 'LN5338', '2026-10-05', 20000.00, 12000.00, 'partial_paid', 'partial_paid'),
-(10, 'LN5338', '2026-10-06', 20000.00, 0.00, 'pending', 'pending'),
-(11, 'LN5338', '2026-10-07', 20000.00, 0.00, 'pending', 'pending'),
-(12, 'LN5338', '2026-10-08', 20000.00, 0.00, 'pending', 'pending'),
-(13, 'LN5338', '2026-10-09', 20000.00, 0.00, 'pending', 'pending'),
-(14, 'LN5338', '2026-10-10', 20000.00, 0.00, 'pending', 'pending'),
-(15, 'LN5338', '2026-10-11', 20000.00, 0.00, 'pending', 'pending'),
-(16, 'LN5338', '2026-10-12', 20000.00, 0.00, 'pending', 'pending'),
-(17, 'LN5338', '2026-10-13', 20000.00, 0.00, 'pending', 'pending'),
-(18, 'LN5338', '2026-10-14', 20000.00, 0.00, 'pending', 'pending'),
-(19, 'LN5338', '2026-10-15', 20000.00, 0.00, 'pending', 'pending'),
-(20, 'LN5338', '2026-10-16', 20000.00, 0.00, 'pending', 'pending'),
-(21, 'LN5338', '2026-10-17', 20000.00, 0.00, 'pending', 'pending'),
-(22, 'LN5338', '2026-10-18', 20000.00, 0.00, 'pending', 'pending'),
-(23, 'LN5338', '2026-10-19', 20000.00, 0.00, 'pending', 'pending'),
-(24, 'LN5338', '2026-10-20', 20000.00, 0.00, 'pending', 'pending'),
-(25, 'LN5338', '2026-10-21', 20000.00, 0.00, 'pending', 'pending'),
-(26, 'LN5338', '2026-10-22', 20000.00, 0.00, 'pending', 'pending'),
-(27, 'LN5338', '2026-10-23', 20000.00, 0.00, 'pending', 'pending'),
-(28, 'LN5338', '2026-10-24', 20000.00, 0.00, 'pending', 'pending'),
-(29, 'LN5338', '2026-10-25', 20000.00, 0.00, 'pending', 'pending'),
-(30, 'LN5338', '2026-10-26', 20000.00, 0.00, 'pending', 'pending'),
-(31, 'LN5338', '2026-10-27', 20000.00, 0.00, 'pending', 'pending'),
-(32, 'LN5338', '2026-10-28', 20000.00, 0.00, 'pending', 'pending');
+(1, 'LN1246', '2026-10-22', 45000.00, 0.00, 'pending', 'pending'),
+(2, 'LN1246', '2026-10-23', 45000.00, 0.00, 'pending', 'pending'),
+(3, 'LN1246', '2026-10-24', 45000.00, 0.00, 'pending', 'pending'),
+(4, 'LN1246', '2026-10-25', 45000.00, 0.00, 'pending', 'pending'),
+(5, 'LN1246', '2026-10-26', 45000.00, 0.00, 'pending', 'pending'),
+(6, 'LN1246', '2026-10-27', 45000.00, 0.00, 'pending', 'pending'),
+(7, 'LN1246', '2026-10-28', 45000.00, 0.00, 'pending', 'pending'),
+(8, 'LN1246', '2026-10-29', 45000.00, 0.00, 'pending', 'pending'),
+(9, 'LN1246', '2026-10-30', 45000.00, 0.00, 'pending', 'pending'),
+(10, 'LN1246', '2026-10-31', 45000.00, 0.00, 'pending', 'pending'),
+(11, 'LN1246', '2026-11-01', 45000.00, 0.00, 'pending', 'pending'),
+(12, 'LN1246', '2026-11-02', 45000.00, 0.00, 'pending', 'pending'),
+(13, 'LN1246', '2026-11-03', 45000.00, 0.00, 'pending', 'pending'),
+(14, 'LN1246', '2026-11-04', 45000.00, 0.00, 'pending', 'pending'),
+(15, 'LN1246', '2026-11-05', 45000.00, 0.00, 'pending', 'pending'),
+(16, 'LN1246', '2026-11-06', 45000.00, 0.00, 'pending', 'pending'),
+(17, 'LN1246', '2026-11-07', 45000.00, 0.00, 'pending', 'pending'),
+(18, 'LN1246', '2026-11-08', 35000.00, 0.00, 'pending', 'pending'),
+(19, 'LN4429', '2026-10-22', 45000.00, 0.00, 'pending', 'pending'),
+(20, 'LN4429', '2026-10-23', 45000.00, 0.00, 'pending', 'pending'),
+(21, 'LN4429', '2026-10-24', 30000.00, 26000.00, 'partial_paid', 'pending'),
+(22, 'LN3202', '2026-10-24', 60000.00, 0.00, 'pending', 'pending'),
+(23, 'LN3202', '2026-10-25', 60000.00, 0.00, 'pending', 'pending'),
+(24, 'LN3202', '2026-10-26', 60000.00, 0.00, 'pending', 'pending'),
+(25, 'LN3202', '2026-10-27', 60000.00, 0.00, 'pending', 'pending'),
+(26, 'LN3202', '2026-10-28', 60000.00, 0.00, 'pending', 'pending'),
+(27, 'LN3202', '2026-10-29', 60000.00, 0.00, 'pending', 'pending'),
+(28, 'LN3202', '2026-10-30', 40000.00, 0.00, 'pending', 'pending');
 
 -- --------------------------------------------------------
 
@@ -617,11 +640,7 @@ CREATE TABLE `repayment` (
 --
 
 INSERT INTO `repayment` (`id`, `loan_id`, `company_id`, `branch_id`, `client_id`, `client_name`, `client_amount`, `date`, `status`, `payment_status`, `payment_field`, `signed_by`) VALUES
-(3, 'LN1388', 108012, 6574658, 213644, 'Mugabo edison', 12000.00, '2026-10-03 09:59:37', 'done', 'partial_paid', 'field', 'nabahireoctave'),
-(4, 'LN3796', 108012, 6574658, 7873765, 'Kampire Joy', 30000.00, '2026-10-03 10:26:23', 'done', 'paid', 'office', 'nabahireoctave'),
-(5, 'LN3796', 108012, 6574658, 7873765, 'Kampire Joy', 30000.00, '2026-10-03 10:30:26', 'done', 'advance', 'office', 'nabahireoctave'),
-(6, 'LN5338', 108012, 6574658, 481944, 'Tumusime Eddy', 20000.00, '2026-10-03 10:46:53', 'done', 'advance', 'field', 'nabahireoctave'),
-(7, 'LN5338', 108012, 6574658, 481944, 'Tumusime Eddy', 12000.00, '2026-10-04 08:18:05', 'done', 'partial_paid', 'field', 'nabahireoctave');
+(1, 'LN4429', 108012, 6574658, 7873765, 'Kampire Joy', 26000.00, '2026-10-23 09:36:50', 'done', NULL, NULL, 'Jonathan David');
 
 -- --------------------------------------------------------
 
@@ -698,13 +717,22 @@ CREATE TABLE `stock` (
   `company_id` bigint(20) NOT NULL,
   `branch_id` bigint(20) NOT NULL,
   `client_id` bigint(20) NOT NULL,
+  `loan_id` varchar(70) NOT NULL,
   `client_name` varchar(255) DEFAULT NULL,
   `security_name` varchar(255) DEFAULT NULL,
-  `date` date NOT NULL DEFAULT curdate(),
   `picture` varchar(255) DEFAULT NULL,
   `released_date` date DEFAULT NULL,
-  `status` enum('released','instock') DEFAULT 'instock'
+  `status` enum('released','instock') DEFAULT 'instock',
+  `collateral_registered_at` timestamp(6) NOT NULL DEFAULT current_timestamp(6)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `stock`
+--
+
+INSERT INTO `stock` (`id`, `company_id`, `branch_id`, `client_id`, `loan_id`, `client_name`, `security_name`, `picture`, `released_date`, `status`, `collateral_registered_at`) VALUES
+(1, 108012, 6574658, 7873765, 'LN4429', 'Kampire Joy', 'Land Details', 'collateral-LN4429-1792742900487.jpg', NULL, 'instock', '2026-10-23 08:08:20.680124'),
+(2, 108012, 6574658, 481944, 'LN1246', 'Tumusime Eddy', 'Computer', 'collateral-LN1246-1792742949489.jpg', NULL, 'instock', '2026-10-23 08:09:09.627097');
 
 -- --------------------------------------------------------
 
@@ -824,7 +852,7 @@ INSERT INTO `users` (`user_id`, `company_id`, `branch_id`, `names`, `email`, `ph
 (156571, 357151, NULL, 'bugingo Blaise', 'bugingo1@gmail.com', '0787345640', 'active', 'superadmin', NULL, '$2b$08$1TZ7JdnRaXqAlS4BVUR0YejIHKLdWSSOGDohM.fx.P2C1fXzHkR6O', 1, '2026-07-09 09:10:11', '2026-07-09 09:15:02'),
 (230551, 108012, NULL, 'Mugisha Dan', 'dan@gmail.com', '0798724546', 'active', 'subadmin', 'user-230551-1791534897733.jpg', '$2b$08$MF3DBiFkpFPinP3xE8L1qOvKl347.bEsZ2QMLlJbeTaMNWAqQOS7W', 1, '2026-07-09 09:05:25', '2026-10-09 10:34:57'),
 (584211, 284573, NULL, 'kemirembe Joyce', 'codejoiner15@gmail.com', '0798724540', 'suspended', 'subadmin', 'user-584211-1790438899241.jpeg', '$2b$08$Ze/A9akUjO.KMj9UFbsD0OZxwif/fzDBNcQTprujaYXwum0C8iveq', 1, '2026-07-09 09:11:53', '2026-09-26 18:08:19'),
-(4823394, 108012, 890765, 'Ishimwe Precious', 'preciousWebale@gmail.com', '0732789551', 'active', 'cashier', NULL, '$2b$08$2jEGYjPLn1iOL.JAzMW6oOE/s/ObKqQF8NEGDY0i.ZYH2Uabj4UcS', 1, '2026-10-16 10:03:36', NULL),
+(4823394, 108012, 890765, 'Ishimwe Precious', 'preciouswebale@gmail.com', '0732789551', 'active', 'cashier', 'user-4823394-1792518444832.jpeg', '$2b$08$jIUeM7TKykz4plKcWvvZ..zS5YLhIPnN4PyEQT.8rn2tC.ETbnbbC', 1, '2026-10-16 10:03:36', '2026-10-20 19:47:24'),
 (8503289, 108012, 6574658, 'Jonathan David', 'jonathan015@gmail.com', '0798124546', 'active', 'cashier', 'user-8503289-1791535418827.png', '$2b$08$jIUeM7TKykz4plKcWvvZ..zS5YLhIPnN4PyEQT.8rn2tC.ETbnbbC', 1, '2026-09-17 09:58:27', '2026-10-09 14:00:06');
 
 --
@@ -897,6 +925,12 @@ ALTER TABLE `client_flag`
   ADD PRIMARY KEY (`id`),
   ADD KEY `company_id` (`company_id`),
   ADD KEY `branch_id` (`branch_id`);
+
+--
+-- Indexes for table `collateral_stocknotification`
+--
+ALTER TABLE `collateral_stocknotification`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `company`
@@ -1052,7 +1086,8 @@ ALTER TABLE `sms_transaction_logs`
 -- Indexes for table `stock`
 --
 ALTER TABLE `stock`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `loan_id` (`loan_id`);
 
 --
 -- Indexes for table `super_admin_auto_notification`
@@ -1146,6 +1181,12 @@ ALTER TABLE `client_flag`
   MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
+-- AUTO_INCREMENT for table `collateral_stocknotification`
+--
+ALTER TABLE `collateral_stocknotification`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
 -- AUTO_INCREMENT for table `company`
 --
 ALTER TABLE `company`
@@ -1221,13 +1262,13 @@ ALTER TABLE `office_charge`
 -- AUTO_INCREMENT for table `payment_schedule`
 --
 ALTER TABLE `payment_schedule`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
 
 --
 -- AUTO_INCREMENT for table `repayment`
 --
 ALTER TABLE `repayment`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `sent_payable`
@@ -1251,7 +1292,7 @@ ALTER TABLE `sms_transaction_logs`
 -- AUTO_INCREMENT for table `stock`
 --
 ALTER TABLE `stock`
-  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `super_admin_auto_notification`

@@ -291,7 +291,7 @@ const sendManualyNotification= async(io,socket)=>{
         console.log('Error in send manually notif controller',err.message)
     } 
     finally{
-        if(conn) (await conn).release();
+        if(conn) await conn.release();
     }
 
 }
@@ -694,9 +694,9 @@ const AddCashier= async(req,res)=>{
 
  
     let conn;
-const token= crypto.randomBytes(4).toString('hex');
-const hashedToken=crypto.createHash('sha256').update(token).digest('hex');
-const Link=`http://localhost:5173/security-setting/${token}`;
+   const token= crypto.randomBytes(4).toString('hex');
+    const hashedToken=crypto.createHash('sha256').update(token).digest('hex');
+     const Link=`http://localhost:5173/security-setting/${token}`;
 
 
 

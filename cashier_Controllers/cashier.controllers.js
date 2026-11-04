@@ -19,7 +19,6 @@ const crypto= require('crypto');
   if(exist===false) return LoanId
 
  }
- 
 
  const GenerateClientId= async(conn)=>{
   let clientId=null;
@@ -480,7 +479,7 @@ const ReturnCurrentBranchLoans= async(req,res)=>{
     let query=` SELECT loan_id, company_id, branch_id, client_id, client_name,
        client_address, client_contact,guarantor_name, guarantor_address, guarantor_contacts, amount_given,
         Balance, DailyInstallment,amountAfterOfficeCharge, chargeAmount, totalpay, status,loan_closingDate,pay_frequency,
-         security_name FROM loan WHERE company_id=? AND branch_id=?`
+         security_name FROM loan WHERE company_id=? AND branch_id=?  `
       
           const params=[compId,branchId];
             const searchValue=`%${search}%`
@@ -1084,25 +1083,6 @@ const HandleSaveBorrowerInfo= async(req,res)=>{
 
 
 
-
-
-
- const FetchNotification= async(req,res)=>{
-   try{
-
-
-    
-   }
-
-   catch(err){
-
-   }
-
-
- }
-
-
-
  const FetchCurrentDemand= async(req,res)=>{
   if(!req.user) return
   const {compId,branchId}=req.user;
@@ -1292,11 +1272,12 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
       const {searchQuery}= req.query;
       const {compId}=req.user;
       const  error={};
-
+      
   try{
      
     if(!searchQuery){
      error.query=`client.search_query _required`;
+     return res.status(400).json({error:error})
     }
 
 
@@ -1307,16 +1288,14 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
 
 
    if(client.length===0){
-     error.query=`client.query_not_found`;
+     return res.status(404).json({isSearchFound:false,messagekey:`error.search_record_not_found`});
    }
    
-    if(Object.keys(error).length>0){
-      return res.status(400).json({error});
-    }
 
     const clientIds= client.map((row=>row.client_id));
     const query=`SELECT 
-           COUNT(DISTINCT cl.company_id) AS FoundIn, SUM(CASE WHEN ln.status='active' THEN ln.amount_given ELSE 0 END) 
+           COUNT(DISTINCT cl.company_id) AS FoundIn, 
+           SUM(CASE WHEN ln.status='active' THEN ln.amount_given ELSE 0 END) 
             AS TotalactiveLoan_amount , SUM(CASE WHEN ln.status='active' THEN 1 ELSE 0 END)
              AS activeLoans , SUM(CASE WHEN ln.status='paid' THEN 1 ELSE 0 END ) AS completed_loans,
              SUM(CASE WHEN ln.status='active' THEN ln.Balance ELSE 0 END) AS outstandingactiveLoanBalance
@@ -1324,19 +1303,61 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
               cl.client_id IN(?)`;
         
          const LoanInfoquery=`SELECT ln.loan_id,ln.amount_given, ln.Balance,ln.client_name,
-          ln.guarantor_name,ln.guarantor_contacts,b.branch_name, cmp.company_name, COALESCE(SUM(r.client_amount),0)
-          AS loanTotalRepaidPaid FROM loan ln INNER JOIN company cmp ON cmp.company_id=ln.company_id INNER JOIN branch 
-          b ON b.branch_id=ln.branch_id LEFT JOIN repayment r ON ln.loan_id=r.loan_id WHERE ln.client_id IN(?)
-           GROUP BY ln.loan_id`
+          ln.guarantor_name,ln.guarantor_contacts,ln.status,b.branch_name, cmp.company_name,COALESCE(r.repaidPerLoan,0) AS TotalRepaid,ps.due_date,ps.expected_amount,
+          ps.paid_amount,ps.status AS schedule_status,ps.status_History FROM loan ln INNER JOIN company cmp ON cmp.company_id=ln.company_id 
+           INNER JOIN branch b ON b.branch_id=ln.branch_id INNER JOIN payment_schedule ps 
+           ON ps.loan_id=ln.loan_id LEFT JOIN (
+          SELECT loan_id,SUM(client_amount) AS repaidPerLoan FROM repayment GROUP BY loan_id) AS 
+          r ON ln.loan_id=r.loan_id
+         WHERE ln.client_id IN(?)`
 
 
     const [stats]=await con.query(query,[clientIds]);
     const  [LoanHistory]= await con.query(LoanInfoquery,[clientIds]) 
 
+    let GroupedLoanInfo= {};
 
     let uniquePhonesnum=[...new Set(client.map(c=>c.phone).filter(Boolean))]; 
     let uniqueAddress=[...new Set(client.map(c=>c.client_address).filter(Boolean))]
     let uniqueNames=[...new Set(client.map(c=>c.client_name ? c.client_name.toLowerCase().trim():'').filter(Boolean))]
+  
+     LoanHistory.forEach((ln)=>{
+     let  LoanId= ln.loan_id;
+     if(!GroupedLoanInfo[LoanId]){
+         GroupedLoanInfo[LoanId]={
+          LoanId:ln.loan_id,
+          clientName:ln.client_name,
+          guarantor:ln.guarantor_name,
+          guarantor_contacts:ln.guarantor_contacts,
+          company_name:ln.company_name,
+          TotalRepaidPerLoan:Number(ln.TotalRepaid).toFixed(2),
+          amount_given:ln.amount_given,
+          loan_balance:ln.Balance,
+          branch:ln.branch_name,
+          Loanstatus:ln.status,
+         schedules:[],
+    
+         }     
+     }
+
+
+     const loan= GroupedLoanInfo[LoanId];
+         if(ln.due_date!==null&&ln.due_date!==undefined&&ln.schedule_status.toLowerCase() !=='pending'){
+       loan.schedules.push({
+        dueDate:ln.due_date,
+        expected_amount:Number(ln.expected_amount).toFixed(2),
+        paid_amount:Number(ln.paid_amount).toFixed(2),
+        status:ln.schedule_status,
+        statusHistory:ln.status_History
+
+       })
+     }
+        
+
+     })
+
+
+
 
 
    const FinalResponse= {
@@ -1345,9 +1366,8 @@ return res.status(404).json({size:0,messageKey:`error.overloaned_notfound`});
      clientAddress:uniqueAddress,
      phone:uniquePhonesnum,
      stats:stats[0]||{},
-     LoanHistory:LoanHistory||[]
+     LoanHistory:Object.values(GroupedLoanInfo)
    }
-
 
 
    return res.status(200).json(FinalResponse);
@@ -1504,12 +1524,125 @@ const HandleReleaseCollateral= async(req,res)=>{
 
 
 
+const HandleAddCashSent= async(req,res)=>{
+  if(!req.user) return
+    const {compId,branchId}=req.user;
+    const {To,amount}=req.body;
+
+
+    let conn;
+    let notificationMessagekey=`notication.you_have_receive_amount`
+
+
+  try{
+     
+    conn=await con.getConnection();
+
+    await conn.beginTransaction();
+   
+    await conn.execute(`
+      INSERT INTO operations
+      (company_id, receiver_branch_id, sender_branch_id, amount) VALUES (?,?,?,?)`,
+      [compId,To,branchId,amount]);
+
+      await conn.execute(`INSERT INTO cashier_notification
+        ( branch_id ,message, Notification_type) VALUES (?,?,?)`,
+         [To,notificationMessagekey,'branch_operation'])
+       
+
+
+    await conn.commit();
+    
+     return res.status(200).json({succes:true,messagekey:`success.add_cash_sent_success`})
+
+  }
+
+
+  catch(err){
+    if(conn) await conn.rollback();
+    console.log(`Error in handleSendCashTocontroller ${err.message}`)
+    return res.status(500).json({succes:false,messagekey:`error.add_cash_sent_failed`});
+  }finally{
+    if(conn) await conn.release();
+  }
+}
+
+
+const FetchBranchCashSentHistory=async (req,res)=>{
+  if(!req.user) return
+  const {compId,branchId}=req.user;
+  console.log(branchId);
+
+  try{
+   
+    const [result]= await con.execute(`SELECT op.amount,op.op_status, op.create_at,
+      recv.branch_name AS receiver,sender.branch_name AS sender FROM operations
+       op INNER JOIN branch recv ON recv.branch_id=op.receiver_branch_id INNER JOIN branch sender ON
+       sender.branch_id=sender_branch_id WHERE sender.branch_id=? `,[branchId])
+    
+        if(result.length>0){
+      return res.status(200).json(result);
+    }
+
+       return res.status(404).json({size:0,messagekey:`error.cash_sent_history_not found`})
+
+
+  }
+
+  catch(err){
+    console.log(`Error In FecthBranchCashSentHistory ${err.message}`);
+    return res.status(500).json({size:1,messagekey:`error.servererror`});
+  }
+
+}
+
+
+const FetchBranchCashReceipt= async(req,res)=>{
+  if(!req.user) return
+  const {compId,branchId}=req.user;
+  try{
+
+    const [result]= await con.execute(`SELECT op.amount,op.op_status, op.recieved_at,op.create_at,b.branch_name AS sender FROM operations
+       op INNER JOIN branch b ON b.branch_id=op.sender_branch_id  WHERE op.receiver_branch_id=?`,[branchId]);
+    
+       if(result.length>0){
+        return res.status(200).json(result);
+       }
+
+       return res.status(404).json({size:0,messagekey:`error.cash_reciept_history_not found`})
+ 
+
+  }
+
+  catch(err){
+   console.log(`Error in FetchBranchCashReceit ${err.message}`)
+   return res.status(500).json({size:1,messagekey:`error.servererror`});
+  }
+}
+
+
+const FetchBranchNotification= async(io,socket)=>{
+    try{
+  const {branchId,compId}=socket.user;
+  socket.on('branch_notification',async()=>{
+    console.log(compId,branchId);
+  })
+
+  }
+  catch(err){
+    console.log(`Error in FetchBranchNotificationController ${err.message}`)
+    return res.status(500).json({size:1,messagekey:`error.servererror`})
+  }
+}
+
 module.exports= {
     FindCurrentBranchBorrowers,HandleSaveLoaninfo,HandlePay,HandleLoanConfirm,
     ReturnCurrentBranchLoans,FetchBorrowerInformation,HandleSaveBorrowerInfo,
     FetchRequestedPayments,FetchFieldPayment,FetchUnpaidHistory,
     HandleReturnCurrentCashierProfile,CashierProfileUpdate,HandleRequestNewLoan,GetLoanHistory,
-    MyRequest,FetchCurrentDemand,FetchNotification,FetChOverLoanedHistory,HandleCrossSearchBorrowerRecord,
-    HandleUploadCollateral,FetchCurrentstockinfo,HandleReleaseCollateral
+    MyRequest,FetchCurrentDemand,FetChOverLoanedHistory,HandleCrossSearchBorrowerRecord,
+    HandleUploadCollateral,FetchCurrentstockinfo,HandleReleaseCollateral,HandleAddCashSent,
+    FetchBranchCashReceipt,FetchBranchCashSentHistory,FetchBranchNotification
+
 }
 
